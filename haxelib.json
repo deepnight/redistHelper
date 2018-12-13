@@ -1,0 +1,12 @@
+{
+  "name": "redistHelper",
+  "url" : "https://github.com/deepnight/haxeRedist",
+  "license": "Apache",
+  "tags": ["Heaps","Hashlink"],
+  "description": "TODO",
+  "version": "0.1.0",
+  "classPath": "src/",
+  "releasenote": "Initial release.",
+  "contributors": ["sbenard"],
+  "dependencies": {}
+}
