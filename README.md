@@ -4,6 +4,12 @@ A small script to quickly create redistribuable of an existing simple HL/JS/SWF 
 
 It will copy all the required files in a specified folder ("redist" by default), so you just have to distribute this folder content. Especially useful to package a HashLink (HL) project.
 
+# Install
+
+```
+haxelib install redistHelper
+```
+
 ## Usage
 
 ``
