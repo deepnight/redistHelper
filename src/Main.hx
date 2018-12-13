@@ -46,7 +46,10 @@ class Main {
 
 		var redistFolder = getParameter("-o");
 		if( redistFolder==null )
-			error("Missing parameter <targetFolder>.");
+			redistFolder = "redist";
+
+		if(getParameter("-hl")==null && getParameter("-swf")==null && getParameter("-js")==null )
+			error("At least one target parameter is required (-hl, -js or -swf).");
 
 		var projectName = getParameter("-p");
 		if( projectName==null )
@@ -238,13 +241,13 @@ class Main {
 	}
 
 	static function usage() {
-		Lib.println("USAGE: haxelib run redist [-hl <HL_hxml>] [-js <JS_hxml>] -o <targetFolder> [-p <project_name>]");
+		Lib.println("USAGE - haxelib run redistHelper [-hl <hxml_file>] [-js <hxml_file>] [-swf <hxml_file>] [-o <targetFolder>] [-p <project_name>]");
 		Sys.exit(0);
 	}
 
 	static function error(msg:Dynamic) {
-		Lib.println("ERROR - "+Std.string(msg));
 		Lib.println("");
+		Lib.println("ERROR - "+Std.string(msg));
 		usage();
 	}
 }
