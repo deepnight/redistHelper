@@ -2,26 +2,26 @@ import neko.Lib;
 
 class Main {
 	static var RUNTIME_FILES = [
-		{ dep:null, f:"hl.exe" },
-		{ dep:null, f:"libhl.dll" },
-		{ dep:null, f:"msvcr120.dll" },
-		{ dep:null, f:"fmt.hdll" },
-		{ dep:null, f:"ssl.hdll" },
+		{ lib:null, f:"hl.exe" },
+		{ lib:null, f:"libhl.dll" },
+		{ lib:null, f:"msvcr120.dll" },
+		{ lib:null, f:"fmt.hdll" },
+		{ lib:null, f:"ssl.hdll" },
 
-		{ dep:"heaps", f:"OpenAL32.dll" },
+		{ lib:"heaps", f:"OpenAL32.dll" },
 
-		{ dep:"heaps", f:"openal.hdll" },
-		{ dep:"heaps", f:"ui.hdll" },
-		{ dep:"heaps", f:"uv.hdll" },
+		{ lib:"heaps", f:"openal.hdll" },
+		{ lib:"heaps", f:"ui.hdll" },
+		{ lib:"heaps", f:"uv.hdll" },
 
-		{ dep:"hlsdl", f:"SDL2.dll" },
-		{ dep:"hlsdl", f:"sdl.hdll" },
+		{ lib:"hlsdl", f:"SDL2.dll" },
+		{ lib:"hlsdl", f:"sdl.hdll" },
 
-		{ dep:"hlsteam", f:"steam.hdll" },
-		{ dep:"hlsteam", f:"steam_api.dll" },
+		{ lib:"hlsteam", f:"steam.hdll" },
+		{ lib:"hlsteam", f:"steam_api.dll" },
 
-		{ dep:"hldx", f:"directx.hdll" },
-		{ dep:"hldx", f:"d3dcompiler_47.dll" },
+		{ lib:"hldx", f:"directx.hdll" },
+		{ lib:"hldx", f:"d3dcompiler_47.dll" },
 	];
 
 	static var NEW_LINE = "\n";
@@ -80,8 +80,8 @@ class Main {
 			// Copy runtimes
 			Lib.println("Copying HL runtime files...");
 			for( r in RUNTIME_FILES ) {
-				if( r.dep==null || hxmlRequiresLib(hxml, r.dep) ) {
-					Lib.println(" -> "+r.f + ( r.dep==null?"" : " [required by -lib "+r.dep+"]") );
+				if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
+					Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
 					copy(haxeFolder+r.f, redistFolder+"/"+projectName+"/"+r.f);
 				}
 			}
