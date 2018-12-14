@@ -27,7 +27,6 @@ class Main {
 	static var NEW_LINE = "\n";
 
 
-
 	static function main() {
 		haxe.Log.trace = function(m, ?pos) {
 			if ( pos != null && pos.customParams == null )
@@ -56,6 +55,7 @@ class Main {
 			projectName = "MyProject";
 
 		// Set CWD to the directory haxelib was called
+		var scriptCwd = Sys.getCwd();
 		var callCwd = getIsolatedParameter(0);
 		if( callCwd==null )
 			error("Script wasn't called using: haxelib run redistHelper [...]");
@@ -67,7 +67,7 @@ class Main {
 		var abs = StringTools.replace( sys.FileSystem.absolutePath(redistFolder), "\\", "/" );
 		if( abs.indexOf(cwd)<0 || abs==cwd )
 			error("For security reasons, target folder should be nested inside current folder.");
-		scanDirectory(redistFolder, ["exe","dat","dll","hdll","js","swf"]); // avoid deleting unexpected files
+		directoryContainsOnly(redistFolder, ["exe","dat","dll","hdll","js","swf","html"]); // avoid deleting unexpected files
 		removeDirectory(redistFolder);
 		createDirectory(redistFolder);
 
@@ -99,11 +99,22 @@ class Main {
 		// JS
 		var hxml = getParameter("-js");
 		if( hxml!=null ) {
+			// Build JS
 			Lib.println("Building "+hxml+"...");
 			Sys.command("haxe", [hxml]);
 			var out = getHxmlOutput(hxml,"-js");
-			copy(out, redistFolder+"/"+projectName+".js");
+			copy(out, redistFolder+"/client.js");
 			Lib.println("");
+			// Create HTML
+			var fi = sys.io.File.read(scriptCwd+"/res/webgl.html");
+			var html = "";
+			while( !fi.eof() )
+				try { html += fi.readLine()+"\n"; } catch(e:haxe.io.Eof) {}
+			html = StringTools.replace(html, "%project%", projectName);
+			html = StringTools.replace(html, "%js%", "client.js");
+			var fo = sys.io.File.write(redistFolder+"/"+projectName+".html", false);
+			fo.writeString(html);
+			fo.close();
 		}
 
 		// SWF
@@ -141,16 +152,16 @@ class Main {
 		sys.FileSystem.deleteDirectory(path+"/");
 	}
 
-	static function scanDirectory(path:String, fileExts:Array<String>) {
+	static function directoryContainsOnly(path:String, allowedExts:Array<String>) {
 		if( !sys.FileSystem.exists(path) )
 			return;
 
 		for( e in sys.FileSystem.readDirectory(path) ) {
 			if( sys.FileSystem.isDirectory(path+"/"+e) )
-				scanDirectory(path+"/"+e, fileExts);
+				directoryContainsOnly(path+"/"+e, allowedExts);
 			else {
 				var extMatched = false;
-				for(ext in fileExts)
+				for(ext in allowedExts)
 					if( e.indexOf(ext)>0 ) {
 						extMatched = true;
 						break;
