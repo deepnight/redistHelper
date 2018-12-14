@@ -39,6 +39,7 @@ class Main {
 			usage();
 
 		// Read parameters
+		var isolatedParams = getIsolatedParameters();
 		var haxeFolder = Sys.getEnv("HAXEPATH");
 		if( haxeFolder==null )
 			error("Missing environment variable HAXEPATH.");
@@ -47,8 +48,8 @@ class Main {
 		if( redistFolder==null )
 			redistFolder = "redist";
 
-		if(getParameter("-hl")==null && getParameter("-swf")==null && getParameter("-js")==null )
-			error("At least one target parameter is required (-hl, -js or -swf).");
+		if( isolatedParams.length==1 )
+			error("At least one HXML is required.");
 
 		var projectName = getParameter("-p");
 		if( projectName==null )
@@ -56,7 +57,7 @@ class Main {
 
 		// Set CWD to the directory haxelib was called
 		var scriptCwd = Sys.getCwd();
-		var callCwd = getIsolatedParameter(0);
+		var callCwd = isolatedParams[isolatedParams.length-1]; // call directory is passed as the last param in haxelibs
 		if( callCwd==null )
 			error("Script wasn't called using: haxelib run redistHelper [...]");
 		Sys.setCwd(callCwd);
@@ -71,61 +72,66 @@ class Main {
 		removeDirectory(redistFolder);
 		createDirectory(redistFolder);
 
-		// HL
-		var hxml = getParameter("-hl");
-		if( hxml!=null ) {
-			// Create folder
-			createDirectory(redistFolder+"/"+projectName);
+		// Parse HXML files given as parameters
+		for(p in isolatedParams)
+			if( p.indexOf(".hxml")>=0 ) {
+				var hxml = p;
+				var content = sys.io.File.read(hxml, false).readAll().toString();
 
-			// Copy runtimes
-			Lib.println("Copying HL runtime files...");
-			for( r in RUNTIME_FILES ) {
-				if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
-					Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
-					copy(haxeFolder+r.f, redistFolder+"/"+projectName+"/"+r.f);
+				// HL
+				if( content.indexOf("-hl ")>=0 ) {
+					// Create folder
+					createDirectory(redistFolder+"/"+projectName);
+
+					// Copy runtimes
+					Lib.println("Copying HL runtime files...");
+					for( r in RUNTIME_FILES ) {
+						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
+							Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
+							copy(haxeFolder+r.f, redistFolder+"/"+projectName+"/"+r.f);
+						}
+					}
+					sys.FileSystem.rename(redistFolder+"/"+projectName+"/hl.exe", redistFolder+"/"+projectName+"/"+projectName+".exe");
+					Lib.println("");
+
+					// Build
+					Lib.println("Building "+hxml+"...");
+					Sys.command("haxe", [hxml]);
+					var out = getHxmlOutput(hxml,"-hl");
+					copy(out, redistFolder+"/"+projectName+"/hlboot.dat");
+					Lib.println("");
+				}
+
+				// JS
+				if( content.indexOf("-js ")>=0 ) {
+					// Build
+					Lib.println("Building "+hxml+"...");
+					Sys.command("haxe", [hxml]);
+					var out = getHxmlOutput(hxml,"-js");
+					copy(out, redistFolder+"/client.js");
+					// Create HTML
+					Lib.println("Creating HTML...");
+					var fi = sys.io.File.read(scriptCwd+"/res/webgl.html");
+					var html = "";
+					while( !fi.eof() )
+					try { html += fi.readLine()+"\n"; } catch(e:haxe.io.Eof) {}
+					html = StringTools.replace(html, "%project%", projectName);
+					html = StringTools.replace(html, "%js%", "client.js");
+					var fo = sys.io.File.write(redistFolder+"/"+projectName+".html", false);
+					fo.writeString(html);
+					fo.close();
+					Lib.println("");
+				}
+
+				// Swf
+				if( content.indexOf("-swf ")>=0 ) {
+					Lib.println("Building "+hxml+"...");
+					Sys.command("haxe", [hxml]);
+					var out = getHxmlOutput(hxml,"-swf");
+					copy(out, redistFolder+"/"+projectName+".swf");
+					Lib.println("");
 				}
 			}
-			sys.FileSystem.rename(redistFolder+"/"+projectName+"/hl.exe", redistFolder+"/"+projectName+"/"+projectName+".exe");
-			Lib.println("");
-
-			// Build
-			Lib.println("Building "+hxml+"...");
-			Sys.command("haxe", [hxml]);
-			var out = getHxmlOutput(hxml,"-hl");
-			copy(out, redistFolder+"/"+projectName+"/hlboot.dat");
-			Lib.println("");
-		}
-
-		// JS
-		var hxml = getParameter("-js");
-		if( hxml!=null ) {
-			// Build JS
-			Lib.println("Building "+hxml+"...");
-			Sys.command("haxe", [hxml]);
-			var out = getHxmlOutput(hxml,"-js");
-			copy(out, redistFolder+"/client.js");
-			Lib.println("");
-			// Create HTML
-			var fi = sys.io.File.read(scriptCwd+"/res/webgl.html");
-			var html = "";
-			while( !fi.eof() )
-				try { html += fi.readLine()+"\n"; } catch(e:haxe.io.Eof) {}
-			html = StringTools.replace(html, "%project%", projectName);
-			html = StringTools.replace(html, "%js%", "client.js");
-			var fo = sys.io.File.write(redistFolder+"/"+projectName+".html", false);
-			fo.writeString(html);
-			fo.close();
-		}
-
-		// SWF
-		var hxml = getParameter("-swf");
-		if( hxml!=null ) {
-			Lib.println("Building "+hxml+"...");
-			Sys.command("haxe", [hxml]);
-			var out = getHxmlOutput(hxml,"-swf");
-			copy(out, redistFolder+"/"+projectName+".swf");
-			Lib.println("");
-		}
 
 		Lib.println("Done.");
 	}
@@ -233,6 +239,21 @@ class Main {
 		return null;
 	}
 
+	static function getIsolatedParameters() : Array<String> {
+		var all = [];
+		var ignoreNext = false;
+		for( p in Sys.args() ) {
+			if( p.charAt(0)=="-" )
+				ignoreNext = true;
+			else if( !ignoreNext )
+				all.push(p);
+			else
+				ignoreNext = false;
+		}
+
+		return all;
+	}
+
 	static function getIsolatedParameter(idx:Int) : Null<String> {
 		var i = 0;
 		var ignoreNext = false;
@@ -252,7 +273,7 @@ class Main {
 	}
 
 	static function usage() {
-		Lib.println("USAGE - haxelib run redistHelper [-hl <hxml_file>] [-js <hxml_file>] [-swf <hxml_file>] [-o <targetFolder>] [-p <project_name>]");
+		Lib.println("USAGE - haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] <hxml1> [<hxml2>] [<hxml3>]");
 		Sys.exit(0);
 	}
 
