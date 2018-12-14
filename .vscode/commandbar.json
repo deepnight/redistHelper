@@ -21,7 +21,7 @@
         "priority": 4
       },
       {
-        "text": "Submit to haxelib",
+        "text": "➠ Submit to haxelib",
         "color": "yellow",
         "command": "start haxelib submit .",
         "alignment": "right",
