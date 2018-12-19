@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "classPath": "src/",
-  "releasenote": "Replaced -js/-swf/-hl parameters by auto-detection of HXML types",
+  "releasenote": "Better HTML output (thanks to Yann Pellegrini)",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
