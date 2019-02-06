@@ -38,29 +38,32 @@ class Main {
 		if( Sys.args().length==0 )
 			usage();
 
-		// Read parameters
+		// Misc parameters
 		var isolatedParams = getIsolatedParameters();
+		if( isolatedParams.length==1 )
+			error("At least one HXML is required.");
+
+		// Haxe install folder
 		var haxeFolder = Sys.getEnv("HAXEPATH");
 		if( haxeFolder==null )
 			error("Missing environment variable HAXEPATH.");
 
+		// Set CWD to the directory haxelib was called
+		var haxeLibDir = Sys.getCwd();
+		var projectDir = isolatedParams[isolatedParams.length-1]; // call directory is passed as the last param in haxelibs
+		if( projectDir==null )
+			error("Script wasn't called using: haxelib run redistHelper [...]");
+		Sys.setCwd(projectDir);
+
+		// Output folder
 		var redistFolder = getParameter("-o");
 		if( redistFolder==null )
 			redistFolder = "redist";
 
-		if( isolatedParams.length==1 )
-			error("At least one HXML is required.");
-
+		// Project name
 		var projectName = getParameter("-p");
 		if( projectName==null )
 			projectName = "MyProject";
-
-		// Set CWD to the directory haxelib was called
-		var scriptCwd = Sys.getCwd();
-		var callCwd = isolatedParams[isolatedParams.length-1]; // call directory is passed as the last param in haxelibs
-		if( callCwd==null )
-			error("Script wasn't called using: haxelib run redistHelper [...]");
-		Sys.setCwd(callCwd);
 
 		// Prepare base folder
 		Lib.println("Preparing folders...");
@@ -111,7 +114,7 @@ class Main {
 					copy(out, redistFolder+"/client.js");
 					// Create HTML
 					Lib.println("Creating HTML...");
-					var fi = sys.io.File.read(scriptCwd+"/res/webgl.html");
+					var fi = sys.io.File.read(haxeLibDir+"/res/webgl.html");
 					var html = "";
 					while( !fi.eof() )
 					try { html += fi.readLine()+"\n"; } catch(e:haxe.io.Eof) {}
