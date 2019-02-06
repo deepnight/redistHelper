@@ -40,8 +40,6 @@ class Main {
 
 		// Misc parameters
 		var isolatedParams = getIsolatedParameters();
-		if( isolatedParams.length==1 )
-			error("At least one HXML is required.");
 
 		// Haxe install folder
 		var haxeFolder = Sys.getEnv("HAXEPATH");
@@ -55,15 +53,36 @@ class Main {
 			error("Script wasn't called using: haxelib run redistHelper [...]");
 		Sys.setCwd(projectDir);
 
+		// Project name
+		var projectName = getParameter("-p");
+		if( projectName==null ) {
+			var p = haxe.io.Path.removeTrailingSlashes( StringTools.replace(projectDir,"\\","/") );
+			var split = p.split("/");
+			projectName = split[split.length-1];
+		}
+		Lib.println("Project name: "+projectName);
+
+		// List HXMLs
+		var hxmls = [];
+		for(p in isolatedParams)
+			if( p.indexOf(".hxml")>=0 )
+				hxmls.push(p);
+		if( hxmls.length==0 ) {
+			// Search for HXML in project folder if no parameter was given
+			for( f in sys.FileSystem.readDirectory(projectDir) )
+				if( !sys.FileSystem.isDirectory(f) && f.indexOf(".hxml")>=0 )
+					hxmls.push(f);
+
+			if( hxmls.length==0 )
+				error("No HXML found in current folder.");
+			else
+				Lib.println("Discovered "+hxmls.length+" potential HXML file(s): "+hxmls.join(", "));
+		}
+
 		// Output folder
 		var redistFolder = getParameter("-o");
 		if( redistFolder==null )
 			redistFolder = "redist";
-
-		// Project name
-		var projectName = getParameter("-p");
-		if( projectName==null )
-			projectName = "MyProject";
 
 		// Prepare base folder
 		Lib.println("Preparing folders...");
@@ -75,69 +94,71 @@ class Main {
 		removeDirectory(redistFolder);
 		createDirectory(redistFolder);
 
+
+
 		// Parse HXML files given as parameters
-		for(p in isolatedParams)
-			if( p.indexOf(".hxml")>=0 ) {
-				var hxml = p;
-				var content = sys.io.File.read(hxml, false).readAll().toString();
+		for(hxml in hxmls) {
+			var content = sys.io.File.read(hxml, false).readAll().toString();
 
-				// HL
-				if( content.indexOf("-hl ")>=0 ) {
-					// Create folder
-					createDirectory(redistFolder+"/"+projectName);
+			// HL
+			if( content.indexOf("-hl ")>=0 ) {
+				// Create folder
+				createDirectory(redistFolder+"/"+projectName);
 
-					// Copy runtimes
-					Lib.println("Copying HL runtime files...");
-					for( r in RUNTIME_FILES ) {
-						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
-							Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
-							copy(haxeFolder+r.f, redistFolder+"/"+projectName+"/"+r.f);
-						}
+				// Copy runtimes
+				Lib.println("Copying HL runtime files...");
+				for( r in RUNTIME_FILES ) {
+					if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
+						Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
+						copy(haxeFolder+r.f, redistFolder+"/"+projectName+"/"+r.f);
 					}
-					sys.FileSystem.rename(redistFolder+"/"+projectName+"/hl.exe", redistFolder+"/"+projectName+"/"+projectName+".exe");
-					Lib.println("");
-
-					// Build
-					Lib.println("Building "+hxml+"...");
-					Sys.command("haxe", [hxml]);
-					var out = getHxmlOutput(hxml,"-hl");
-					copy(out, redistFolder+"/"+projectName+"/hlboot.dat");
-					Lib.println("");
 				}
+				sys.FileSystem.rename(redistFolder+"/"+projectName+"/hl.exe", redistFolder+"/"+projectName+"/"+projectName+".exe");
+				Lib.println("");
 
-				// JS
-				if( content.indexOf("-js ")>=0 ) {
-					// Build
-					Lib.println("Building "+hxml+"...");
-					Sys.command("haxe", [hxml]);
-					var out = getHxmlOutput(hxml,"-js");
-					copy(out, redistFolder+"/client.js");
-					// Create HTML
-					Lib.println("Creating HTML...");
-					var fi = sys.io.File.read(haxeLibDir+"/res/webgl.html");
-					var html = "";
-					while( !fi.eof() )
-					try { html += fi.readLine()+"\n"; } catch(e:haxe.io.Eof) {}
-					html = StringTools.replace(html, "%project%", projectName);
-					html = StringTools.replace(html, "%js%", "client.js");
-					var fo = sys.io.File.write(redistFolder+"/"+projectName+".html", false);
-					fo.writeString(html);
-					fo.close();
-					Lib.println("");
-				}
-
-				// Swf
-				if( content.indexOf("-swf ")>=0 ) {
-					Lib.println("Building "+hxml+"...");
-					Sys.command("haxe", [hxml]);
-					var out = getHxmlOutput(hxml,"-swf");
-					copy(out, redistFolder+"/"+projectName+".swf");
-					Lib.println("");
-				}
+				// Build
+				Lib.println("Building "+hxml+"...");
+				Sys.command("haxe", [hxml]);
+				var out = getHxmlOutput(hxml,"-hl");
+				copy(out, redistFolder+"/"+projectName+"/hlboot.dat");
+				Lib.println("");
 			}
+
+			// JS
+			if( content.indexOf("-js ")>=0 ) {
+				// Build
+				Lib.println("Building "+hxml+"...");
+				Sys.command("haxe", [hxml]);
+				var out = getHxmlOutput(hxml,"-js");
+				copy(out, redistFolder+"/client.js");
+				// Create HTML
+				Lib.println("Creating HTML...");
+				var fi = sys.io.File.read(haxeLibDir+"/res/webgl.html");
+				var html = "";
+				while( !fi.eof() )
+				try { html += fi.readLine()+"\n"; } catch(e:haxe.io.Eof) {}
+				html = StringTools.replace(html, "%project%", projectName);
+				html = StringTools.replace(html, "%js%", "client.js");
+				var fo = sys.io.File.write(redistFolder+"/"+projectName+".html", false);
+				fo.writeString(html);
+				fo.close();
+				Lib.println("");
+			}
+
+			// SWF
+			if( content.indexOf("-swf ")>=0 ) {
+				Lib.println("Building "+hxml+"...");
+				Sys.command("haxe", [hxml]);
+				var out = getHxmlOutput(hxml,"-swf");
+				copy(out, redistFolder+"/"+projectName+".swf");
+				Lib.println("");
+			}
+		}
 
 		Lib.println("Done.");
 	}
+
+
 
 	static function createDirectory(path:String) {
 		try {
