@@ -297,7 +297,11 @@ class Main {
 	}
 
 	static function usage() {
-		Lib.println("USAGE - haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] <hxml1> [<hxml2>] [<hxml3>]");
+		Lib.println("USAGE:");
+		Lib.println("  haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] [<hxml1>] [<hxml2>] [<hxml3>]");
+		Lib.println("NOTES:");
+		Lib.println("  If no HXML is given, the script will pick all HXMLs found in current directory.");
+		Lib.println("  If no Project Name is set, the current folder name will be used.");
 		Sys.exit(0);
 	}
 
