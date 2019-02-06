@@ -15,7 +15,7 @@
       {
         "text": "(Run)",
         "color": "orange",
-        "command": "haxelib run redistHelper redist.hxml -o test -p RedistTest",
+        "command": "haxelib run redistHelper",
         "alignment": "right",
         "skipTerminateQuickPick": false,
         "priority": 4
