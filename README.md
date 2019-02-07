@@ -12,7 +12,7 @@ haxelib install redistHelper
 
 ## Usage
 
-``
+```
 USAGE:
     haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] [<hxml1>] [<hxml2>] [<hxml3>]
 NOTES:
@@ -22,13 +22,7 @@ EXAMPLES:
     haxelib run redisHelper      // automatically finds HXMLs and build them into ./redist/
     haxelib run redisHelper hashlink.hxml -o someFolder -p MyGreatGame
     haxelib run redisHelper hashlink.hxml flash.hxml webgl.hxml
-``
-
-Example:
-``
-haxelib run redistHelper -p SomeGreatGame build_hl.hxml build_js.hxml build_swf.hxml
-``
-
+```
 
 ## Parameters
 
