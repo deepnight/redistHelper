@@ -13,7 +13,15 @@ haxelib install redistHelper
 ## Usage
 
 ``
-haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] <hxml_1> [<hxml_2>] [<hxml_3>]
+USAGE:
+    haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] [<hxml1>] [<hxml2>] [<hxml3>]
+NOTES:
+    If no HXML is given, the script will pick all HXMLs found in current directory.
+    If no Project Name is set, the current folder name will be used.
+EXAMPLES:
+    haxelib run redisHelper      // automatically finds HXMLs and build them into ./redist/
+    haxelib run redisHelper hashlink.hxml -o someFolder -p MyGreatGame
+    haxelib run redisHelper hashlink.hxml flash.hxml webgl.hxml
 ``
 
 Example:
