@@ -48,7 +48,7 @@ class Main {
 
 		// Set CWD to the directory haxelib was called
 		var haxeLibDir = Sys.getCwd();
-		var projectDir = isolatedParams[isolatedParams.length-1]; // call directory is passed as the last param in haxelibs
+		var projectDir = isolatedParams.pop(); // call directory is passed as the last param in haxelibs
 		if( projectDir==null )
 			error("Script wasn't called using: haxelib run redistHelper [...]");
 		Sys.setCwd(projectDir);
@@ -64,9 +64,14 @@ class Main {
 
 		// List HXMLs
 		var hxmls = [];
+		var extraFiles = [];
 		for(p in isolatedParams)
 			if( p.indexOf(".hxml")>=0 )
 				hxmls.push(p);
+			else {
+				var tmp = StringTools.replace(p,"\\","/").split("/");
+				extraFiles.push({ path:p, file:tmp[tmp.length-1] });
+			}
 		if( hxmls.length==0 ) {
 			// Search for HXML in project folder if no parameter was given
 			for( f in sys.FileSystem.readDirectory(projectDir) )
@@ -90,11 +95,12 @@ class Main {
 		var abs = StringTools.replace( sys.FileSystem.absolutePath(redistFolder), "\\", "/" );
 		if( abs.indexOf(cwd)<0 || abs==cwd )
 			error("For security reasons, target folder should be nested inside current folder.");
-		directoryContainsOnly(redistFolder, ["exe","dat","dll","hdll","js","swf","html"]); // avoid deleting unexpected files
+		// avoid deleting unexpected files
+		directoryContainsOnly(redistFolder, ["exe","dat","dll","hdll","js","swf","html"], extraFiles.map( function(e) return e.file) );
 		removeDirectory(redistFolder);
 		createDirectory(redistFolder);
 
-
+		var extraFilesTargets = [redistFolder];
 
 		// Parse HXML files given as parameters
 		for(hxml in hxmls) {
@@ -104,6 +110,7 @@ class Main {
 			if( content.indexOf("-hl ")>=0 ) {
 				// Create folder
 				createDirectory(redistFolder+"/"+projectName);
+				extraFilesTargets.push(redistFolder+"/"+projectName);
 
 				// Copy runtimes
 				Lib.println("Copying HL runtime files...");
@@ -155,6 +162,13 @@ class Main {
 			}
 		}
 
+		for(f in extraFiles)
+		for(t in extraFilesTargets) {
+			Lib.println("Copying file "+f.path+" to "+t+"...");
+			copy(projectDir+"/"+f.path, t+"/"+f.file);
+		}
+
+
 		Lib.println("Done.");
 	}
 
@@ -182,21 +196,24 @@ class Main {
 		sys.FileSystem.deleteDirectory(path+"/");
 	}
 
-	static function directoryContainsOnly(path:String, allowedExts:Array<String>) {
+	static function directoryContainsOnly(path:String, allowedExts:Array<String>, ignoredFiles:Array<String>) {
 		if( !sys.FileSystem.exists(path) )
 			return;
 
 		for( e in sys.FileSystem.readDirectory(path) ) {
 			if( sys.FileSystem.isDirectory(path+"/"+e) )
-				directoryContainsOnly(path+"/"+e, allowedExts);
+				directoryContainsOnly(path+"/"+e, allowedExts, ignoredFiles);
 			else {
-				var extMatched = false;
+				var suspFile = true;
 				for(ext in allowedExts)
 					if( e.indexOf(ext)>0 ) {
-						extMatched = true;
+						suspFile = false;
 						break;
 					}
-				if( !extMatched )
+				for(f in ignoredFiles)
+					if( f==e )
+						suspFile = false;
+				if( suspFile )
 					error("Target folder (which will be deleted) seems to contain unexpected files like "+e);
 			}
 		}
@@ -298,10 +315,11 @@ class Main {
 
 	static function usage() {
 		Lib.println("USAGE:");
-		Lib.println("  haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] [<hxml1>] [<hxml2>] [<hxml3>]");
+		Lib.println("  haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] [<hxml1>] [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
 		Lib.println("NOTES:");
 		Lib.println("  If no HXML is given, the script will pick all HXMLs found in current directory.");
 		Lib.println("  If no Project Name is set, the current folder name will be used.");
+		Lib.println("  Custom files will be copied in the redist folders");
 		Sys.exit(0);
 	}
 

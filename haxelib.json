@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "classPath": "src/",
-  "releasenote": "Minor HTML fix",
+  "releasenote": "Added support for custom files to be copied to the redist folders",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
