@@ -100,7 +100,7 @@ class Main {
 		removeDirectory(redistFolder);
 		createDirectory(redistFolder);
 
-		var extraFilesTargets = [redistFolder];
+		var extraFilesTargets = [];
 
 		// Parse HXML files given as parameters
 		for(hxml in hxmls) {
@@ -149,6 +149,7 @@ class Main {
 				var fo = sys.io.File.write(redistFolder+"/"+projectName+".html", false);
 				fo.writeString(html);
 				fo.close();
+				extraFilesTargets.push(redistFolder);
 				Lib.println("");
 			}
 
@@ -158,14 +159,20 @@ class Main {
 				Sys.command("haxe", [hxml]);
 				var out = getHxmlOutput(hxml,"-swf");
 				copy(out, redistFolder+"/"+projectName+".swf");
+				extraFilesTargets.push(redistFolder+"/"+projectName);
 				Lib.println("");
 			}
 		}
 
-		for(f in extraFiles)
-		for(t in extraFilesTargets) {
-			Lib.println("Copying file "+f.path+" to "+t+"...");
-			copy(projectDir+"/"+f.path, t+"/"+f.file);
+		for(f in extraFiles) {
+			var dups = new Map();
+			for(t in extraFilesTargets) {
+				if( dups.exists(t) )
+					continue;
+				dups.set(t, true);
+				Lib.println("Copying file "+f.path+" to "+t+"...");
+				copy(projectDir+"/"+f.path, t+"/"+f.file);
+			}
 		}
 
 
