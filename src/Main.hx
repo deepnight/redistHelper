@@ -145,7 +145,6 @@ class Main {
 							var to = tDir+"/"+toFile;
 							if( r.executableFormat!=null )
 								Lib.println(" -> Renamed executable to "+toFile);
-							// trace(from+" > "+to);
 							copy(from, to);
 						}
 					}
@@ -156,8 +155,13 @@ class Main {
 					Lib.println("");
 				}
 
-				makeHl(redistDir+"/"+projectName+".win", RUNTIME_FILES_WIN);
-				makeHl(redistDir+"/"+projectName+".mac", RUNTIME_FILES_MAC);
+				// Package HL
+				if( content.indexOf("hlsdl")>0 ) {
+					makeHl(redistDir+"/"+projectName+".win", RUNTIME_FILES_WIN); // SDL windows
+					makeHl(redistDir+"/"+projectName+".mac", RUNTIME_FILES_MAC); // SDL Mac
+				}
+				else
+					makeHl(redistDir+"/"+projectName, RUNTIME_FILES_WIN); // directX, windows only
 
 			}
 
