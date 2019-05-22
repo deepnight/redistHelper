@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "classPath": "src/",
-  "releasenote": "Fixed useless copy of extrafiles to unrelevant folders",
+  "releasenote": "Added experimental HL Mac packager (HL SDL only)",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
