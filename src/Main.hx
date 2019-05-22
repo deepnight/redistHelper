@@ -1,15 +1,19 @@
 import neko.Lib;
 
+typedef RuntimeFile = {
+	var lib: Null<String>;
+	var f: String;
+	var ?executableFormat: String;
+}
+
 class Main {
-	static var RUNTIME_FILES = [
-		{ lib:null, f:"hl.exe" },
+	static var RUNTIME_FILES_WIN : Array<RuntimeFile> = [
+		{ lib:null, f:"hl.exe", executableFormat:"$.exe" },
 		{ lib:null, f:"libhl.dll" },
 		{ lib:null, f:"msvcr120.dll" },
 		{ lib:null, f:"fmt.hdll" },
-		{ lib:null, f:"ssl.hdll" },
 
 		{ lib:"heaps", f:"OpenAL32.dll" },
-
 		{ lib:"heaps", f:"openal.hdll" },
 		{ lib:"heaps", f:"ui.hdll" },
 		{ lib:"heaps", f:"uv.hdll" },
@@ -22,6 +26,19 @@ class Main {
 
 		{ lib:"hldx", f:"directx.hdll" },
 		{ lib:"hldx", f:"d3dcompiler_47.dll" },
+	];
+	static var RUNTIME_FILES_MAC : Array<RuntimeFile> = [
+		{ lib:null, f:"macRedist/hl", executableFormat:"$" },
+		{ lib:null, f:"macRedist/libhl.dylib" },
+		{ lib:null, f:"macRedist/libpng16.16.dylib" }, // fmt
+		{ lib:null, f:"macRedist/libvorbis.0.dylib" }, // fmt
+		{ lib:null, f:"macRedist/libvorbisfile.3.dylib" }, // fmt
+		{ lib:null, f:"macRedist/libmbedtls.10.dylib" }, // SSL
+
+		{ lib:"heaps", f:"macRedist/libuv.1.dylib" },
+		{ lib:"heaps", f:"macRedist/libopenal.1.dylib" },
+
+		{ lib:"hlsdl", f:"macRedist/libSDL2-2.0.0.dylib" },
 	];
 
 	static var NEW_LINE = "\n";
@@ -42,12 +59,13 @@ class Main {
 		var isolatedParams = getIsolatedParameters();
 
 		// Haxe install folder
-		var haxeFolder = Sys.getEnv("HAXEPATH");
-		if( haxeFolder==null )
+		var haxeDir = Sys.getEnv("HAXEPATH");
+		if( haxeDir==null )
 			error("Missing environment variable HAXEPATH.");
 
 		// Set CWD to the directory haxelib was called
 		var haxeLibDir = Sys.getCwd();
+		trace(haxeLibDir);
 		var projectDir = isolatedParams.pop(); // call directory is passed as the last param in haxelibs
 		if( projectDir==null )
 			error("Script wasn't called using: haxelib run redistHelper [...]");
@@ -85,50 +103,62 @@ class Main {
 		}
 
 		// Output folder
-		var redistFolder = getParameter("-o");
-		if( redistFolder==null )
-			redistFolder = "redist";
+		var redistDir = getParameter("-o");
+		if( redistDir==null )
+			redistDir = "redist";
 
 		// Prepare base folder
 		Lib.println("Preparing folders...");
 		var cwd = StringTools.replace( Sys.getCwd(), "\\", "/" );
-		var abs = StringTools.replace( sys.FileSystem.absolutePath(redistFolder), "\\", "/" );
+		var abs = StringTools.replace( sys.FileSystem.absolutePath(redistDir), "\\", "/" );
 		if( abs.indexOf(cwd)<0 || abs==cwd )
 			error("For security reasons, target folder should be nested inside current folder.");
 		// avoid deleting unexpected files
-		directoryContainsOnly(redistFolder, ["exe","dat","dll","hdll","js","swf","html"], extraFiles.map( function(e) return e.file) );
-		removeDirectory(redistFolder);
-		createDirectory(redistFolder);
+		directoryContainsOnly(redistDir, ["exe","dat","dll","hdll","js","swf","html","dylib"], extraFiles.map( function(e) return e.file) );
+		removeDirectory(redistDir);
+		createDirectory(redistDir);
 
 		var extraFilesTargets = [];
 
 		// Parse HXML files given as parameters
 		for(hxml in hxmls) {
-			var content = sys.io.File.read(hxml, false).readAll().toString();
+			var content = getFullHxml( hxml );
 
 			// HL
 			if( content.indexOf("-hl ")>=0 ) {
-				// Create folder
-				createDirectory(redistFolder+"/"+projectName);
-				extraFilesTargets.push(redistFolder+"/"+projectName);
-
-				// Copy runtimes
-				Lib.println("Copying HL runtime files...");
-				for( r in RUNTIME_FILES ) {
-					if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
-						Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
-						copy(haxeFolder+r.f, redistFolder+"/"+projectName+"/"+r.f);
-					}
-				}
-				sys.FileSystem.rename(redistFolder+"/"+projectName+"/hl.exe", redistFolder+"/"+projectName+"/"+projectName+".exe");
-				Lib.println("");
-
 				// Build
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
-				var out = getHxmlOutput(hxml,"-hl");
-				copy(out, redistFolder+"/"+projectName+"/hlboot.dat");
-				Lib.println("");
+
+				function makeHl(tDir:String, files:Array<RuntimeFile>) {
+					// Create folder
+					createDirectory(tDir);
+					extraFilesTargets.push(tDir);
+
+					// Copy runtimes
+					Lib.println("Copying HL runtime files to "+tDir+"...");
+					for( r in files ) {
+						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
+							Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
+							var from = r.f.indexOf("/")<0 ? haxeDir+r.f : haxeLibDir+r.f;
+							var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
+							var to = tDir+"/"+toFile;
+							if( r.executableFormat!=null )
+								Lib.println(" -> Renamed executable to "+toFile);
+							// trace(from+" > "+to);
+							copy(from, to);
+						}
+					}
+
+					// Copy HL bin file
+					var out = getHxmlOutput(hxml,"-hl");
+					copy(out, tDir+"/hlboot.dat");
+					Lib.println("");
+				}
+
+				makeHl(redistDir+"/"+projectName+".win", RUNTIME_FILES_WIN);
+				makeHl(redistDir+"/"+projectName+".mac", RUNTIME_FILES_MAC);
+
 			}
 
 			// JS
@@ -137,19 +167,19 @@ class Main {
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
 				var out = getHxmlOutput(hxml,"-js");
-				copy(out, redistFolder+"/client.js");
+				copy(out, redistDir+"/client.js");
 				// Create HTML
 				Lib.println("Creating HTML...");
 				var fi = sys.io.File.read(haxeLibDir+"/res/webgl.html");
 				var html = "";
 				while( !fi.eof() )
-				try { html += fi.readLine()+"\n"; } catch(e:haxe.io.Eof) {}
+				try { html += fi.readLine()+NEW_LINE; } catch(e:haxe.io.Eof) {}
 				html = StringTools.replace(html, "%project%", projectName);
 				html = StringTools.replace(html, "%js%", "client.js");
-				var fo = sys.io.File.write(redistFolder+"/"+projectName+".html", false);
+				var fo = sys.io.File.write(redistDir+"/"+projectName+".html", false);
 				fo.writeString(html);
 				fo.close();
-				extraFilesTargets.push(redistFolder);
+				extraFilesTargets.push(redistDir);
 				Lib.println("");
 			}
 
@@ -158,8 +188,8 @@ class Main {
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
 				var out = getHxmlOutput(hxml,"-swf");
-				copy(out, redistFolder+"/"+projectName+".swf");
-				extraFilesTargets.push(redistFolder+"/"+projectName);
+				copy(out, redistDir+"/"+projectName+".swf");
+				extraFilesTargets.push(redistDir+"/"+projectName);
 				Lib.println("");
 			}
 		}
@@ -179,6 +209,18 @@ class Main {
 		Lib.println("Done.");
 	}
 
+
+	static function getFullHxml(f:String) {
+		var lines = sys.io.File.read(f, false).readAll().toString().split(NEW_LINE);
+		var i = 0;
+		while( i<lines.length ) {
+			if( lines[i].indexOf(".hxml")>=0 )
+				lines[i] = getFullHxml(lines[i]);
+			i++;
+		}
+
+		return lines.join(NEW_LINE);
+	}
 
 
 	static function createDirectory(path:String) {
@@ -212,8 +254,11 @@ class Main {
 				directoryContainsOnly(path+"/"+e, allowedExts, ignoredFiles);
 			else {
 				var suspFile = true;
+				if( e.indexOf(".")<0 )
+					suspFile = false; // ignore extension-less files
+
 				for(ext in allowedExts)
-					if( e.indexOf(ext)>0 ) {
+					if( e.indexOf("."+ext)>0 ) {
 						suspFile = false;
 						break;
 					}
@@ -243,8 +288,8 @@ class Main {
 			error("File not found: "+hxmlPath);
 
 		try {
-			var fi = sys.io.File.read(hxmlPath, false);
-			for( line in fi.readAll().toString().split(NEW_LINE) ) {
+			var content = getFullHxml(hxmlPath);
+			for( line in content.split(NEW_LINE) ) {
 				if( line.indexOf(lookFor)>=0 )
 					return StringTools.trim( line.split(lookFor)[1] );
 			}
@@ -322,7 +367,7 @@ class Main {
 
 	static function usage() {
 		Lib.println("USAGE:");
-		Lib.println("  haxelib run redistHelper [-o <outputFolder>] [-p <project_name>] [<hxml1>] [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
+		Lib.println("  haxelib run redistHelper [-o <outputDir>] [-p <project_name>] [<hxml1>] [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
 		Lib.println("NOTES:");
 		Lib.println("  If no HXML is given, the script will pick all HXMLs found in current directory.");
 		Lib.println("  If no Project Name is set, the current folder name will be used.");
