@@ -12,6 +12,7 @@ class Main {
 		{ lib:null, f:"libhl.dll" },
 		{ lib:null, f:"msvcr120.dll" },
 		{ lib:null, f:"fmt.hdll" },
+		{ lib:null, f:"ssl.hdll" },
 
 		{ lib:"heaps", f:"OpenAL32.dll" },
 		{ lib:"heaps", f:"openal.hdll" },
