@@ -186,7 +186,7 @@ class Main {
 				try { html += fi.readLine()+NEW_LINE; } catch(e:haxe.io.Eof) {}
 				html = StringTools.replace(html, "%project%", projectName);
 				html = StringTools.replace(html, "%js%", "client.js");
-				var fo = sys.io.File.write(redistDir+"/"+projectName+".html", false);
+				var fo = sys.io.File.write(redistDir+"/index.html", false);
 				fo.writeString(html);
 				fo.close();
 				extraFilesTargets.push(redistDir);
