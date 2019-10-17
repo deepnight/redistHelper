@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "classPath": "src/",
-  "releasenote": "Fixed crash when hl.exe is not in the same folder as haxe.exe",
+  "releasenote": "Updated the HTML of JS redist. Renamed the HTML to index.html (better itch.io support).",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
