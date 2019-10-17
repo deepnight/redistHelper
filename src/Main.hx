@@ -49,6 +49,9 @@ class Main {
 
 	static var NEW_LINE = "\n";
 
+	static var redistHelperDir = "";
+	static var projectDir = "";
+
 
 	static function main() {
 		haxe.Log.trace = function(m, ?pos) {
@@ -64,14 +67,9 @@ class Main {
 		// Misc parameters
 		var isolatedParams = getIsolatedParameters();
 
-		// Haxe install folder
-		var haxeDir = Sys.getEnv("HAXEPATH");
-		if( haxeDir==null )
-			error("Missing environment variable HAXEPATH.");
-
 		// Set CWD to the directory haxelib was called
-		var redistHelperDir = Sys.getCwd();
-		var projectDir = isolatedParams.pop(); // call directory is passed as the last param in haxelibs
+		redistHelperDir = cleanupPathWithTrailing( Sys.getCwd() );
+		projectDir = cleanupPathWithTrailing( isolatedParams.pop() ); // call directory is passed as the last param in haxelibs
 		if( projectDir==null )
 			error("Script wasn't called using: haxelib run redistHelper [...]");
 		Sys.setCwd(projectDir);
@@ -79,9 +77,8 @@ class Main {
 		// Project name
 		var projectName = getParameter("-p");
 		if( projectName==null ) {
-			var p = haxe.io.Path.removeTrailingSlashes( StringTools.replace(projectDir,"\\","/") );
-			var split = p.split("/");
-			projectName = split[split.length-1];
+			var split = projectDir.split("/");
+			projectName = split[split.length-2];
 		}
 		Lib.println("Project name: "+projectName);
 
@@ -145,7 +142,7 @@ class Main {
 					for( r in files ) {
 						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
 							Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
-							var from = r.f.indexOf("/")<0 ? haxeDir+r.f : redistHelperDir+r.f;
+							var from = findFileInEnvPath(r.f);
 							var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
 							var to = tDir+"/"+toFile;
 							if( r.executableFormat!=null )
@@ -183,7 +180,7 @@ class Main {
 				copy(out, redistDir+"/client.js");
 				// Create HTML
 				Lib.println("Creating HTML...");
-				var fi = sys.io.File.read(redistHelperDir+"/res/webgl.html");
+				var fi = sys.io.File.read(redistHelperDir+"res/webgl.html");
 				var html = "";
 				while( !fi.eof() )
 				try { html += fi.readLine()+NEW_LINE; } catch(e:haxe.io.Eof) {}
@@ -218,12 +215,29 @@ class Main {
 					continue;
 				dups.set(t, true);
 				Lib.println("Copying file "+f.path+" to "+t+"...");
-				copy(projectDir+"/"+f.path, t+"/"+f.file);
+				copy(projectDir+f.path, t+"/"+f.file);
 			}
 		}
 
 
 		Lib.println("Done.");
+	}
+
+	static inline function cleanupPathWithTrailing(path:String) {
+		return haxe.io.Path.addTrailingSlash( StringTools.replace(path, "\\", "/") );
+	}
+
+	static function findFileInEnvPath(f:String) {
+		if( sys.FileSystem.exists(redistHelperDir+f) )
+			return redistHelperDir+f;
+
+		for(path in Sys.getEnv("path").split(";")) {
+			path = cleanupPathWithTrailing(path);
+			if( sys.FileSystem.exists(path+f) )
+				return path+f;
+		}
+
+		throw "File not found: "+f;
 	}
 
 	static function initRedistDir(d:String, extraFiles:Array<ExtraCopiedFile>) {
@@ -301,12 +315,12 @@ class Main {
 	}
 
 	static function copy(from:String, to:String) {
-		try {
+		// try {
 			sys.io.File.copy(from, to);
-		}
-		catch(e:Dynamic) {
-			error("Can't copy "+from+" ("+e+")");
-		}
+		// }
+		// catch(e:Dynamic) {
+		// 	error("Can't copy "+from+" ("+e+")");
+		// }
 	}
 
 	static function getHxmlOutput(hxmlPath:String, lookFor:String) : Null<String> {
