@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "classPath": "src/",
-  "releasenote": "Added support for separated output folders (one for each build). See -h for more informations.",
+  "releasenote": "Fixed crash when hl.exe is not in the same folder as haxe.exe",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
