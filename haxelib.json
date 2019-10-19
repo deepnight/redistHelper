@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "classPath": "src/",
-  "releasenote": "Updated the HTML of JS redist. Renamed the HTML to index.html (better itch.io support).",
+  "releasenote": "Fullscreen support for Itch.io (HTML5 games)",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
