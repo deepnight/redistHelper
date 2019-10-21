@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "classPath": "src/",
-  "releasenote": "Fullscreen support for Itch.io (HTML5 games)",
+  "releasenote": "Added d3dcompiler_47.dll (ver 6.3). Fixed the findFile() method to focus only on haxe related folders.",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
