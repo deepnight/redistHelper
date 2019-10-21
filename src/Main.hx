@@ -34,17 +34,17 @@ class Main {
 		{ lib:"hldx", f:"d3dcompiler_47.dll" },
 	];
 	static var RUNTIME_FILES_MAC : Array<RuntimeFile> = [
-		{ lib:null, f:"macRedist/hl", executableFormat:"$" },
-		{ lib:null, f:"macRedist/libhl.dylib" },
-		{ lib:null, f:"macRedist/libpng16.16.dylib" }, // fmt
-		{ lib:null, f:"macRedist/libvorbis.0.dylib" }, // fmt
-		{ lib:null, f:"macRedist/libvorbisfile.3.dylib" }, // fmt
-		{ lib:null, f:"macRedist/libmbedtls.10.dylib" }, // SSL
+		{ lib:null, f:"redistFiles/mac/hl", executableFormat:"$" },
+		{ lib:null, f:"redistFiles/mac/libhl.dylib" },
+		{ lib:null, f:"redistFiles/mac/libpng16.16.dylib" }, // fmt
+		{ lib:null, f:"redistFiles/mac/libvorbis.0.dylib" }, // fmt
+		{ lib:null, f:"redistFiles/mac/libvorbisfile.3.dylib" }, // fmt
+		{ lib:null, f:"redistFiles/mac/libmbedtls.10.dylib" }, // SSL
 
-		{ lib:"heaps", f:"macRedist/libuv.1.dylib" },
-		{ lib:"heaps", f:"macRedist/libopenal.1.dylib" },
+		{ lib:"heaps", f:"redistFiles/mac/libuv.1.dylib" },
+		{ lib:"heaps", f:"redistFiles/mac/libopenal.1.dylib" },
 
-		{ lib:"hlsdl", f:"macRedist/libSDL2-2.0.0.dylib" },
+		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
 	];
 
 	static var NEW_LINE = "\n";
@@ -141,8 +141,8 @@ class Main {
 					Lib.println("Copying HL runtime files to "+tDir+"...");
 					for( r in files ) {
 						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
-							Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"]") );
-							var from = findFileInEnvPath(r.f);
+							var from = findFile(r.f);
+							Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
 							var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
 							var to = tDir+"/"+toFile;
 							if( r.executableFormat!=null )
@@ -180,7 +180,7 @@ class Main {
 				copy(out, redistDir+"/client.js");
 				// Create HTML
 				Lib.println("Creating HTML...");
-				var fi = sys.io.File.read(redistHelperDir+"res/webgl.html");
+				var fi = sys.io.File.read(redistHelperDir+"redistFiles/webgl.html");
 				var html = "";
 				while( !fi.eof() )
 				try { html += fi.readLine()+NEW_LINE; } catch(e:haxe.io.Eof) {}
@@ -227,17 +227,32 @@ class Main {
 		return haxe.io.Path.addTrailingSlash( StringTools.replace(path, "\\", "/") );
 	}
 
-	static function findFileInEnvPath(f:String) {
+	static function findFile(f:String) {
 		if( sys.FileSystem.exists(redistHelperDir+f) )
 			return redistHelperDir+f;
 
+		// Locate haxe tools
+		var haxeTools = ["haxe.exe", "hl.exe", "neko.exe" ];
+		var paths = [];
 		for(path in Sys.getEnv("path").split(";")) {
 			path = cleanupPathWithTrailing(path);
-			if( sys.FileSystem.exists(path+f) )
-				return path+f;
+			for(f in haxeTools)
+				if( sys.FileSystem.exists(path+f) ) {
+					paths.push(path);
+					break;
+				}
 		}
 
-		throw "File not found: "+f;
+		paths.push(redistHelperDir+"redistFiles/");
+
+		if( paths.length<=0 )
+			throw "Haxe tools not found ("+haxeTools.join(", ")+") in PATH!";
+
+		for(path in paths)
+			if( sys.FileSystem.exists(path+f) )
+				return path+f;
+
+		throw "File not found: "+f+", lookup paths="+paths.join(", ");
 	}
 
 	static function initRedistDir(d:String, extraFiles:Array<ExtraCopiedFile>) {
