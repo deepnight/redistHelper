@@ -66,6 +66,8 @@ class Main {
 			usage();
 
 		// Misc parameters
+		if( hasParameter("-h") )
+			usage();
 		verbose = hasParameter("-v");
 		var zipping = hasParameter("-zip") || hasParameter("-z");
 		var isolatedParams = getIsolatedParameters();
@@ -76,14 +78,6 @@ class Main {
 		if( projectDir==null )
 			error("Script wasn't called using: haxelib run redistHelper [...]");
 		Sys.setCwd(projectDir);
-
-		// Project name
-		var projectName = getParameter("-p");
-		if( projectName==null ) {
-			var split = projectDir.split("/");
-			projectName = split[split.length-2];
-		}
-		Lib.println("Project name: "+projectName);
 
 		// List HXMLs
 		var hxmlPaths = [];
@@ -96,16 +90,25 @@ class Main {
 				extraFiles.push({ path:p, file:tmp[tmp.length-1] });
 			}
 		if( hxmlPaths.length==0 ) {
-			// Search for HXML in project folder if no parameter was given
-			for( f in sys.FileSystem.readDirectory(projectDir) )
-				if( !sys.FileSystem.isDirectory(f) && f.indexOf(".hxml")>=0 )
-					hxmlPaths.push(f);
+			usage();
+			// // Search for HXML in project folder if no parameter was given
+			// for( f in sys.FileSystem.readDirectory(projectDir) )
+			// 	if( !sys.FileSystem.isDirectory(f) && f.indexOf(".hxml")>=0 )
+			// 		hxmlPaths.push(f);
 
-			if( hxmlPaths.length==0 )
-				error("No HXML found in current folder.");
-			else
-				Lib.println("Discovered "+hxmlPaths.length+" potential HXML file(s): "+hxmlPaths.join(", "));
+			// if( hxmlPaths.length==0 )
+			// 	error("No HXML found in current folder.");
+			// else
+			// 	Lib.println("Discovered "+hxmlPaths.length+" potential HXML file(s): "+hxmlPaths.join(", "));
 		}
+
+		// Project name
+		var projectName = getParameter("-p");
+		if( projectName==null ) {
+			var split = projectDir.split("/");
+			projectName = split[split.length-2];
+		}
+		Lib.println("Project name: "+projectName);
 		Sys.println("");
 
 		// Output folder
@@ -175,7 +178,6 @@ class Main {
 					makeHl(baseRedistDir+"/sdl_win/"+projectName, "sdl_win", RUNTIME_FILES_WIN); // SDL windows
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_win.zip", baseRedistDir+"/sdl_win/");
-					Sys.println("");
 
 					makeHl(baseRedistDir+"/sdl_mac/"+projectName, "sdl_mac", RUNTIME_FILES_MAC); // SDL Mac
 					if( zipping )
@@ -402,7 +404,7 @@ class Main {
 					if( f==e )
 						suspFile = false;
 				if( suspFile )
-					error("Target folder (which will be deleted) seems to contain unexpected files like "+e);
+					error("Output folder \""+path+"\" (which will be deleted) seems to contain unexpected files like "+e);
 			}
 		}
 	}
@@ -511,13 +513,19 @@ class Main {
 	// }
 
 	static function usage() {
+		Lib.println("");
 		Lib.println("USAGE:");
-		Lib.println("  haxelib run redistHelper [<hxml1>] [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
+		Lib.println("  haxelib run redistHelper <hxml1> [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
+		Lib.println("");
 		Lib.println("OPTIONS:");
 		Lib.println("  -o <outputDir> : change the default redistHelper output dir (default: \"redist/\")");
 		Lib.println("  -p <projectName> : change the default project name (if not provided, it will use the name of the parent folder where this script is called)");
+		Lib.println("  -zip : create a zip file for each build");
+		Lib.println("  -h : show this help");
+		Lib.println("  -v : verbose mode (display more informations)");
+		Lib.println("");
 		Lib.println("NOTES:");
-		Lib.println("  - If no HXML is given, the script will pick all HXMLs found in current folder.");
+		// Lib.println("  - If no HXML is given, the script will pick all HXMLs found in current folder.");
 		Lib.println("  - All specificied \"Custom files\" will be copied in each redist folders (can be useful for README, LICENSE, etc.)");
 		Sys.exit(0);
 	}
