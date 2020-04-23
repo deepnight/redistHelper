@@ -124,7 +124,7 @@ class Main {
 
 		// Parse HXML files given as parameters
 		for(hxml in hxmlPaths) {
-			Sys.println("Checking "+hxml);
+			Sys.println("Parsing "+hxml+"...");
 			var content = getFullHxml( hxml );
 
 			// HL
