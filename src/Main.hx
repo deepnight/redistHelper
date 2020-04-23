@@ -118,6 +118,8 @@ class Main {
 
 		var extraFilesTargets = [];
 
+
+
 		// Parse HXML files given as parameters
 		for(hxml in hxmls) {
 			var content = getFullHxml( hxml );
@@ -127,28 +129,26 @@ class Main {
 				// Build
 				var directX = content.indexOf("hldx")>0;
 
-				var redistDir = separateDirs ? StringTools.replace(baseRedistDir, "$", directX ? "dx" : "sdl") : baseRedistDir;
-				if( separateDirs )
-					initRedistDir(redistDir, extraFiles);
-
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
 
-				function makeHl(tDir:String, files:Array<RuntimeFile>) {
-					// Create folder
-					createDirectory(tDir);
-					extraFilesTargets.push(tDir);
+				function makeHl(hlDir:String, files:Array<RuntimeFile>) {
+					initRedistDir(hlDir, extraFiles);
+
+						// Create folder
+					createDirectory(hlDir);
+					extraFilesTargets.push(hlDir);
 
 					// Copy runtimes
 					if( verbose )
-						Lib.println("Copying HL runtime files to "+tDir+"...");
+						Lib.println("Copying HL runtime files to "+hlDir+"...");
 					for( r in files ) {
 						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
 							var from = findFile(r.f);
 							if( verbose )
 								Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
 							var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
-							var to = tDir+"/"+toFile;
+							var to = hlDir+"/"+toFile;
 							if( r.executableFormat!=null && verbose )
 								Lib.println(" -> Renamed executable to "+toFile);
 							copy(from, to);
@@ -157,31 +157,34 @@ class Main {
 
 					// Copy HL bin file
 					var out = getHxmlOutput(hxml,"-hl");
-					copy(out, tDir+"/hlboot.dat");
+					copy(out, hlDir+"/hlboot.dat");
 
 					Lib.println("");
 				}
 
 				// Package HL
-				if( directX )
-					makeHl(redistDir+"/"+projectName, RUNTIME_FILES_WIN); // directX, windows only
+				if( directX ) {
+					var dir = separateDirs ? StringTools.replace(baseRedistDir, "$", "dx") : baseRedistDir+"/directx";
+					makeHl(dir+"/"+projectName, RUNTIME_FILES_WIN); // directX, windows only
+
+				}
 				else {
-					makeHl(redistDir+"/"+projectName+".win", RUNTIME_FILES_WIN); // SDL windows
-					makeHl(redistDir+"/"+projectName+".mac", RUNTIME_FILES_MAC); // SDL Mac
+					var dir = separateDirs ? StringTools.replace(baseRedistDir, "$", "sdl") : baseRedistDir+"/sdl";
+					makeHl(dir+"_win/"+projectName, RUNTIME_FILES_WIN); // SDL windows
+					makeHl(dir+"_mac/"+projectName, RUNTIME_FILES_MAC); // SDL Mac
 				}
 			}
 
 			// JS
 			if( content.indexOf("-js ")>=0 ) {
 				// Build
-				var redistDir = separateDirs ? StringTools.replace(baseRedistDir,"$","js") : baseRedistDir;
-				if( separateDirs )
-					initRedistDir(redistDir, extraFiles);
+				var jsDir = separateDirs ? StringTools.replace(baseRedistDir,"$","js") : baseRedistDir+"/js";
+				initRedistDir(jsDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
 				var out = getHxmlOutput(hxml,"-js");
-				copy(out, redistDir+"/client.js");
+				copy(out, jsDir+"/client.js");
 				// Create HTML
 				Lib.println("Creating HTML...");
 				var fi = sys.io.File.read(redistHelperDir+"redistFiles/webgl.html");
@@ -190,25 +193,24 @@ class Main {
 				try { html += fi.readLine()+NEW_LINE; } catch(e:haxe.io.Eof) {}
 				html = StringTools.replace(html, "%project%", projectName);
 				html = StringTools.replace(html, "%js%", "client.js");
-				var fo = sys.io.File.write(redistDir+"/index.html", false);
+				var fo = sys.io.File.write(jsDir+"/index.html", false);
 				fo.writeString(html);
 				fo.close();
-				extraFilesTargets.push(redistDir);
+				extraFilesTargets.push(jsDir);
 
 				Lib.println("");
 			}
 
 			// SWF
 			if( content.indexOf("-swf ")>=0 ) {
-				var redistDir = separateDirs ? StringTools.replace(baseRedistDir,"$","swf") : baseRedistDir;
-				if( separateDirs )
-					initRedistDir(redistDir, extraFiles);
+				var swfDir = separateDirs ? StringTools.replace(baseRedistDir,"$","swf") : baseRedistDir+"/swf";
+				initRedistDir(swfDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
 				var out = getHxmlOutput(hxml,"-swf");
-				copy(out, redistDir+"/"+projectName+".swf");
-				extraFilesTargets.push(redistDir+"/"+projectName);
+				copy(out, swfDir+"/"+projectName+".swf");
+				extraFilesTargets.push(swfDir+"/"+projectName);
 				Lib.println("");
 			}
 		}
@@ -251,7 +253,7 @@ class Main {
 						fileName: path.substr(path.indexOf("/")+1) + "/",
 						fileSize: 0,
 						fileTime: sys.FileSystem.stat(path).ctime,
-						data: null,
+						data: haxe.io.Bytes.alloc(0),
 						dataSize: 0,
 						compressed: false,
 						crc32: null,
@@ -278,6 +280,9 @@ class Main {
 
 		// Zip entries
 		var out = new haxe.io.BytesOutput();
+		for(e in entries)
+			if( e.data.length>0 )
+				e.data = haxe.zip.Compress.run(e.data, 9);
 		var w = new haxe.zip.Writer(out);
 		w.write(entries);
 		Lib.println(" -> "+zipName+" ("+out.length+" bytes)");
@@ -391,12 +396,12 @@ class Main {
 	}
 
 	static function copy(from:String, to:String) {
-		// try {
+		try {
 			sys.io.File.copy(from, to);
-		// }
-		// catch(e:Dynamic) {
-		// 	error("Can't copy "+from+" ("+e+")");
-		// }
+		}
+		catch(e:Dynamic) {
+			error("Can't copy "+from+" to "+to+" ("+e+")");
+		}
 	}
 
 	static function getHxmlOutput(hxmlPath:String, lookFor:String) : Null<String> {
