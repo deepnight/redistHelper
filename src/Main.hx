@@ -67,6 +67,7 @@ class Main {
 
 		// Misc parameters
 		verbose = hasParameter("-v");
+		var zipping = hasParameter("-zip") || hasParameter("-z");
 		var isolatedParams = getIsolatedParameters();
 
 		// Set CWD to the directory haxelib was called
@@ -83,6 +84,7 @@ class Main {
 			projectName = split[split.length-2];
 		}
 		Lib.println("Project name: "+projectName);
+		Sys.println("");
 
 		// List HXMLs
 		var hxmls = [];
@@ -132,16 +134,16 @@ class Main {
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
 
-				function makeHl(hlDir:String, files:Array<RuntimeFile>) {
+				function makeHl(hlDir:String, zipName:String, files:Array<RuntimeFile>) {
 					initRedistDir(hlDir, extraFiles);
 
-						// Create folder
+					// Create folder
 					createDirectory(hlDir);
 					extraFilesTargets.push(hlDir);
 
 					// Copy runtimes
 					if( verbose )
-						Lib.println("Copying HL runtime files to "+hlDir+"...");
+						Lib.println("Copying HL runtime files to "+hlDir+"... ");
 					for( r in files ) {
 						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
 							var from = findFile(r.f);
@@ -159,20 +161,26 @@ class Main {
 					var out = getHxmlOutput(hxml,"-hl");
 					copy(out, hlDir+"/hlboot.dat");
 
-					Lib.println("");
+					copyExtraFilesIn(extraFiles, hlDir);
 				}
 
 				// Package HL
 				if( directX ) {
 					var dir = separateDirs ? StringTools.replace(baseRedistDir, "$", "dx") : baseRedistDir+"/directx";
-					makeHl(dir+"/"+projectName, RUNTIME_FILES_WIN); // directX, windows only
-
+					makeHl(dir+"/"+projectName, "directx", RUNTIME_FILES_WIN); // directX, windows only
+					zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "directx", dir);
 				}
 				else {
 					var dir = separateDirs ? StringTools.replace(baseRedistDir, "$", "sdl") : baseRedistDir+"/sdl";
-					makeHl(dir+"_win/"+projectName, RUNTIME_FILES_WIN); // SDL windows
-					makeHl(dir+"_mac/"+projectName, RUNTIME_FILES_MAC); // SDL Mac
+
+					makeHl(dir+"_win/"+projectName, "sdl_win", RUNTIME_FILES_WIN); // SDL windows
+					zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "sdl_win.zip", dir+"_win/");
+					Sys.println("");
+
+					makeHl(dir+"_mac/"+projectName, "sdl_mac", RUNTIME_FILES_MAC); // SDL Mac
+					zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "sdl_mac.zip", dir+"_mac/");
 				}
+				Sys.println("");
 			}
 
 			// JS
@@ -198,6 +206,9 @@ class Main {
 				fo.close();
 				extraFilesTargets.push(jsDir);
 
+				copyExtraFilesIn(extraFiles, jsDir);
+				zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "js", jsDir);
+
 				Lib.println("");
 			}
 
@@ -211,38 +222,53 @@ class Main {
 				var out = getHxmlOutput(hxml,"-swf");
 				copy(out, swfDir+"/"+projectName+".swf");
 				extraFilesTargets.push(swfDir+"/"+projectName);
+
+				copyExtraFilesIn(extraFiles, swfDir);
+				zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "swf", swfDir);
+
 				Lib.println("");
 			}
 		}
 
 
 		// Copy extra files to each repo
-		for(f in extraFiles) {
-			var dups = new Map();
-			for(t in extraFilesTargets) {
-				if( dups.exists(t) )
-					continue;
-				dups.set(t, true);
-				Lib.println("Copying file "+f.path+" to "+t+"...");
-				copy(projectDir+f.path, t+"/"+f.file);
-			}
-		}
+		// for(f in extraFiles) {
+		// 	var dups = new Map();
+		// 	for(t in extraFilesTargets) {
+		// 		if( dups.exists(t) )
+		// 			continue;
+		// 		dups.set(t, true);
+		// 		Lib.println("Copying file "+f.path+" to "+t+"...");
+		// 		copy(projectDir+f.path, t+"/"+f.file);
+		// 	}
+		// }
 
 		// Zip
-		if( hasParameter("-zip") )
-			for(path in extraFilesTargets)
-				zipFolder(path);
+		// if( hasParameter("-zip") )
+		// 	for(path in extraFilesTargets)
+		// 		zipFolder(path);
 
 
 		Lib.println("Done.");
 	}
 
-	static function zipFolder(path:String) {
-		var zipName = ( path.indexOf("/")>=0 ? path.substr( 0, path.indexOf("/") ) : path ) + ".zip";
-		Lib.println("Zipping "+path+" to "+zipName+"...");
+	static function copyExtraFilesIn(extraFiles:Array<ExtraCopiedFile>, targetPath:String) {
+		for(f in extraFiles) {
+			if( verbose )
+				Lib.println(" -> Copying file "+f.path+" to "+targetPath+"...");
+			copy(projectDir+f.path, targetPath+"/"+f.file);
+		}
+	}
+
+	static function zipFolder(zipPath:String, basePath:String) {
+		if( zipPath.indexOf(".zip")<0 )
+			zipPath+=".zip";
+
+		Lib.println("Zipping "+basePath+"...");
+
 		// List entries
 		var entries : List<haxe.zip.Entry> = new List();
-		var pendingDirs = [path];
+		var pendingDirs = [basePath];
 		while( pendingDirs.length>0 ) {
 			var cur = pendingDirs.shift();
 			for( fName in sys.FileSystem.readDirectory(cur) ) {
@@ -250,7 +276,7 @@ class Main {
 				if( sys.FileSystem.isDirectory(path) ) {
 					pendingDirs.push(path);
 					entries.add({
-						fileName: path.substr(path.indexOf("/")+1) + "/",
+						fileName: path.substr(basePath.length+1) + "/",
 						fileSize: 0,
 						fileTime: sys.FileSystem.stat(path).ctime,
 						data: haxe.io.Bytes.alloc(0),
@@ -262,7 +288,7 @@ class Main {
 				else {
 					var bytes = sys.io.File.getBytes(path);
 					entries.add({
-						fileName: path.substr(path.indexOf("/")+1),
+						fileName: path.substr(basePath.length+1),
 						fileSize: sys.FileSystem.stat(path).size,
 						fileTime: sys.FileSystem.stat(path).ctime,
 						data: bytes,
@@ -274,19 +300,21 @@ class Main {
 			}
 		}
 
-		if( verbose )
-			for(e in entries)
-				Sys.println(" -> ZIP entry: "+e.fileName+" "+e.fileSize+" bytes");
-
 		// Zip entries
 		var out = new haxe.io.BytesOutput();
 		for(e in entries)
-			if( e.data.length>0 )
-				e.data = haxe.zip.Compress.run(e.data, 9);
+			if( e.data.length>0 ) {
+				if( verbose )
+					Sys.println(" -> Compressing: "+e.fileName+" ("+e.fileSize+" bytes)");
+				else
+					Sys.print("*");
+				e.crc32 = haxe.crypto.Crc32.make(e.data);
+				haxe.zip.Tools.compress(e,9);
+			}
 		var w = new haxe.zip.Writer(out);
 		w.write(entries);
-		Lib.println(" -> "+zipName+" ("+out.length+" bytes)");
-		sys.io.File.saveBytes(zipName, out.getBytes());
+		Lib.println(" -> "+zipPath+" ("+out.length+" bytes)");
+		sys.io.File.saveBytes(zipPath, out.getBytes());
 	}
 
 	static inline function cleanupPathWithTrailing(path:String) {
@@ -328,7 +356,7 @@ class Main {
 		if( abs.indexOf(cwd)<0 || abs==cwd )
 			error("For security reasons, target folder should be nested inside current folder.");
 		// avoid deleting unexpected files
-		directoryContainsOnly(d, ["exe","dat","dll","hdll","js","swf","html","dylib"], extraFiles.map( function(e) return e.file) );
+		directoryContainsOnly(d, ["exe","dat","dll","hdll","js","swf","html","dylib","zip"], extraFiles.map( function(e) return e.file) );
 		removeDirectory(d);
 		createDirectory(d);
 	}
@@ -468,7 +496,7 @@ class Main {
 		var ignoreNext = false;
 		for( p in Sys.args() ) {
 			if( p.charAt(0)=="-" ) {
-				if( p!="-v" && p!="-zip" )
+				if( p!="-v" && p!="-zip" && p!="-z" )
 					ignoreNext = true;
 			}
 			else if( !ignoreNext )
