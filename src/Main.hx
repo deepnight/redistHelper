@@ -51,6 +51,7 @@ class Main {
 
 	static var redistHelperDir = "";
 	static var projectDir = "";
+	static var verbose = false;
 
 
 	static function main() {
@@ -65,6 +66,7 @@ class Main {
 			usage();
 
 		// Misc parameters
+		verbose = hasParameter("-v");
 		var isolatedParams = getIsolatedParameters();
 
 		// Set CWD to the directory haxelib was called
@@ -138,14 +140,16 @@ class Main {
 					extraFilesTargets.push(tDir);
 
 					// Copy runtimes
-					Lib.println("Copying HL runtime files to "+tDir+"...");
+					if( verbose )
+						Lib.println("Copying HL runtime files to "+tDir+"...");
 					for( r in files ) {
 						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
 							var from = findFile(r.f);
-							Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
+							if( verbose )
+								Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
 							var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
 							var to = tDir+"/"+toFile;
-							if( r.executableFormat!=null )
+							if( r.executableFormat!=null && verbose )
 								Lib.println(" -> Renamed executable to "+toFile);
 							copy(from, to);
 						}
@@ -154,6 +158,7 @@ class Main {
 					// Copy HL bin file
 					var out = getHxmlOutput(hxml,"-hl");
 					copy(out, tDir+"/hlboot.dat");
+
 					Lib.println("");
 				}
 
@@ -164,7 +169,6 @@ class Main {
 					makeHl(redistDir+"/"+projectName+".win", RUNTIME_FILES_WIN); // SDL windows
 					makeHl(redistDir+"/"+projectName+".mac", RUNTIME_FILES_MAC); // SDL Mac
 				}
-
 			}
 
 			// JS
@@ -190,6 +194,7 @@ class Main {
 				fo.writeString(html);
 				fo.close();
 				extraFilesTargets.push(redistDir);
+
 				Lib.println("");
 			}
 
@@ -208,6 +213,8 @@ class Main {
 			}
 		}
 
+
+		// Copy extra files to each repo
 		for(f in extraFiles) {
 			var dups = new Map();
 			for(t in extraFilesTargets) {
@@ -219,8 +226,62 @@ class Main {
 			}
 		}
 
+		// Zip
+		if( hasParameter("-zip") )
+			for(path in extraFilesTargets)
+				zipFolder(path);
+
 
 		Lib.println("Done.");
+	}
+
+	static function zipFolder(path:String) {
+		var zipName = ( path.indexOf("/")>=0 ? path.substr( 0, path.indexOf("/") ) : path ) + ".zip";
+		Lib.println("Zipping "+path+" to "+zipName+"...");
+		// List entries
+		var entries : List<haxe.zip.Entry> = new List();
+		var pendingDirs = [path];
+		while( pendingDirs.length>0 ) {
+			var cur = pendingDirs.shift();
+			for( fName in sys.FileSystem.readDirectory(cur) ) {
+				var path = cur+"/"+fName;
+				if( sys.FileSystem.isDirectory(path) ) {
+					pendingDirs.push(path);
+					entries.add({
+						fileName: path.substr(path.indexOf("/")+1) + "/",
+						fileSize: 0,
+						fileTime: sys.FileSystem.stat(path).ctime,
+						data: null,
+						dataSize: 0,
+						compressed: false,
+						crc32: null,
+					});
+				}
+				else {
+					var bytes = sys.io.File.getBytes(path);
+					entries.add({
+						fileName: path.substr(path.indexOf("/")+1),
+						fileSize: sys.FileSystem.stat(path).size,
+						fileTime: sys.FileSystem.stat(path).ctime,
+						data: bytes,
+						dataSize: bytes.length,
+						compressed: false,
+						crc32: null,
+					});
+				}
+			}
+		}
+
+		if( verbose )
+			for(e in entries)
+				Sys.println(" -> ZIP entry: "+e.fileName+" "+e.fileSize+" bytes");
+
+		// Zip entries
+		var out = new haxe.io.BytesOutput();
+		var w = new haxe.zip.Writer(out);
+		w.write(entries);
+		Lib.println(" -> "+zipName+" ("+out.length+" bytes)");
+		sys.io.File.saveBytes(zipName, out.getBytes());
 	}
 
 	static inline function cleanupPathWithTrailing(path:String) {
@@ -401,8 +462,10 @@ class Main {
 		var all = [];
 		var ignoreNext = false;
 		for( p in Sys.args() ) {
-			if( p.charAt(0)=="-" )
-				ignoreNext = true;
+			if( p.charAt(0)=="-" ) {
+				if( p!="-v" && p!="-zip" )
+					ignoreNext = true;
+			}
 			else if( !ignoreNext )
 				all.push(p);
 			else
@@ -412,23 +475,23 @@ class Main {
 		return all;
 	}
 
-	static function getIsolatedParameter(idx:Int) : Null<String> {
-		var i = 0;
-		var ignoreNext = false;
-		for( p in Sys.args() ) {
-			if( p.charAt(0)=="-" )
-				ignoreNext = true;
-			else if( !ignoreNext ) {
-				if( idx==i )
-					return p;
-				i++;
-			}
-			else
-				ignoreNext = false;
-		}
+	// static function getIsolatedParameter(idx:Int) : Null<String> {
+	// 	var i = 0;
+	// 	var ignoreNext = false;
+	// 	for( p in Sys.args() ) {
+	// 		if( p.charAt(0)=="-" )
+	// 			ignoreNext = true;
+	// 		else if( !ignoreNext ) {
+	// 			if( idx==i )
+	// 				return p;
+	// 			i++;
+	// 		}
+	// 		else
+	// 			ignoreNext = false;
+	// 	}
 
-		return null;
-	}
+	// 	return null;
+	// }
 
 	static function usage() {
 		Lib.println("USAGE:");
