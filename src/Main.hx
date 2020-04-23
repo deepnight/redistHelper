@@ -84,46 +84,47 @@ class Main {
 			projectName = split[split.length-2];
 		}
 		Lib.println("Project name: "+projectName);
-		Sys.println("");
 
 		// List HXMLs
-		var hxmls = [];
+		var hxmlPaths = [];
 		var extraFiles : Array<ExtraCopiedFile> = [];
 		for(p in isolatedParams)
 			if( p.indexOf(".hxml")>=0 )
-				hxmls.push(p);
+				hxmlPaths.push(p);
 			else {
 				var tmp = StringTools.replace(p,"\\","/").split("/");
 				extraFiles.push({ path:p, file:tmp[tmp.length-1] });
 			}
-		if( hxmls.length==0 ) {
+		if( hxmlPaths.length==0 ) {
 			// Search for HXML in project folder if no parameter was given
 			for( f in sys.FileSystem.readDirectory(projectDir) )
 				if( !sys.FileSystem.isDirectory(f) && f.indexOf(".hxml")>=0 )
-					hxmls.push(f);
+					hxmlPaths.push(f);
 
-			if( hxmls.length==0 )
+			if( hxmlPaths.length==0 )
 				error("No HXML found in current folder.");
 			else
-				Lib.println("Discovered "+hxmls.length+" potential HXML file(s): "+hxmls.join(", "));
+				Lib.println("Discovered "+hxmlPaths.length+" potential HXML file(s): "+hxmlPaths.join(", "));
 		}
+		Sys.println("");
 
 		// Output folder
 		var baseRedistDir = getParameter("-o");
 		if( baseRedistDir==null )
 			baseRedistDir = "redist";
+		if( baseRedistDir.indexOf("$")>=0 )
+			error("The \"$\" in the \"-o\" parameter is deprecated. RedistHelper now exports each redistribuable to a separate folder by default.");
 
 		// Prepare base folder
-		var separateDirs = baseRedistDir.indexOf("$")>=0;
-		if( !separateDirs )
-			initRedistDir(baseRedistDir, extraFiles);
+		initRedistDir(baseRedistDir, extraFiles);
 
 		var extraFilesTargets = [];
 
 
 
 		// Parse HXML files given as parameters
-		for(hxml in hxmls) {
+		for(hxml in hxmlPaths) {
+			Sys.println("Checking "+hxml);
 			var content = getFullHxml( hxml );
 
 			// HL
@@ -166,19 +167,19 @@ class Main {
 
 				// Package HL
 				if( directX ) {
-					var dir = separateDirs ? StringTools.replace(baseRedistDir, "$", "dx") : baseRedistDir+"/directx";
-					makeHl(dir+"/"+projectName, "directx", RUNTIME_FILES_WIN); // directX, windows only
-					zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "directx", dir);
+					makeHl(baseRedistDir+"/directx/"+projectName, "directx", RUNTIME_FILES_WIN); // directX, windows only
+					if( zipping )
+						zipFolder( baseRedistDir+"/directx.zip", baseRedistDir+"/directx");
 				}
 				else {
-					var dir = separateDirs ? StringTools.replace(baseRedistDir, "$", "sdl") : baseRedistDir+"/sdl";
-
-					makeHl(dir+"_win/"+projectName, "sdl_win", RUNTIME_FILES_WIN); // SDL windows
-					zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "sdl_win.zip", dir+"_win/");
+					makeHl(baseRedistDir+"/sdl_win/"+projectName, "sdl_win", RUNTIME_FILES_WIN); // SDL windows
+					if( zipping )
+						zipFolder( baseRedistDir+"/sdl_win.zip", baseRedistDir+"/sdl_win/");
 					Sys.println("");
 
-					makeHl(dir+"_mac/"+projectName, "sdl_mac", RUNTIME_FILES_MAC); // SDL Mac
-					zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "sdl_mac.zip", dir+"_mac/");
+					makeHl(baseRedistDir+"/sdl_mac/"+projectName, "sdl_mac", RUNTIME_FILES_MAC); // SDL Mac
+					if( zipping )
+						zipFolder( baseRedistDir+"/sdl_mac.zip", baseRedistDir+"/sdl_mac/");
 				}
 				Sys.println("");
 			}
@@ -186,7 +187,7 @@ class Main {
 			// JS
 			if( content.indexOf("-js ")>=0 ) {
 				// Build
-				var jsDir = separateDirs ? StringTools.replace(baseRedistDir,"$","js") : baseRedistDir+"/js";
+				var jsDir = baseRedistDir+"/js";
 				initRedistDir(jsDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
@@ -207,14 +208,15 @@ class Main {
 				extraFilesTargets.push(jsDir);
 
 				copyExtraFilesIn(extraFiles, jsDir);
-				zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "js", jsDir);
+				if( zipping )
+					zipFolder( baseRedistDir+"/js.zip", jsDir);
 
 				Lib.println("");
 			}
 
 			// SWF
 			if( content.indexOf("-swf ")>=0 ) {
-				var swfDir = separateDirs ? StringTools.replace(baseRedistDir,"$","swf") : baseRedistDir+"/swf";
+				var swfDir = baseRedistDir+"/swf";
 				initRedistDir(swfDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
@@ -224,30 +226,12 @@ class Main {
 				extraFilesTargets.push(swfDir+"/"+projectName);
 
 				copyExtraFilesIn(extraFiles, swfDir);
-				zipFolder( ( separateDirs ? "" : baseRedistDir+"/" ) + "swf", swfDir);
+				if( zipping )
+					zipFolder( baseRedistDir+"/swf.zip", swfDir);
 
 				Lib.println("");
 			}
 		}
-
-
-		// Copy extra files to each repo
-		// for(f in extraFiles) {
-		// 	var dups = new Map();
-		// 	for(t in extraFilesTargets) {
-		// 		if( dups.exists(t) )
-		// 			continue;
-		// 		dups.set(t, true);
-		// 		Lib.println("Copying file "+f.path+" to "+t+"...");
-		// 		copy(projectDir+f.path, t+"/"+f.file);
-		// 	}
-		// }
-
-		// Zip
-		// if( hasParameter("-zip") )
-		// 	for(path in extraFilesTargets)
-		// 		zipFolder(path);
-
 
 		Lib.println("Done.");
 	}
@@ -366,7 +350,7 @@ class Main {
 		var lines = sys.io.File.read(f, false).readAll().toString().split(NEW_LINE);
 		var i = 0;
 		while( i<lines.length ) {
-			if( lines[i].indexOf(".hxml")>=0 )
+			if( lines[i].indexOf(".hxml")>=0 && lines[i].indexOf("-cmd")<0 )
 				lines[i] = getFullHxml(lines[i]);
 			i++;
 		}
@@ -528,21 +512,21 @@ class Main {
 
 	static function usage() {
 		Lib.println("USAGE:");
-		Lib.println("  haxelib run redistHelper [-o <outputDir>] [-p <project_name>] [<hxml1>] [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
+		Lib.println("  haxelib run redistHelper [<hxml1>] [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
+		Lib.println("OPTIONS:");
+		Lib.println("  -o <outputDir> : change the default redistHelper output dir (default: \"redist/\")");
+		Lib.println("  -p <projectName> : change the default project name (if not provided, it will use the name of the parent folder where this script is called)");
 		Lib.println("NOTES:");
 		Lib.println("  - If no HXML is given, the script will pick all HXMLs found in current folder.");
-		Lib.println("  - If no Project Name is set, the current folder name will be used.");
-		Lib.println("  - All specificied \"Custom files\" will be copied in the redist folders");
-		Lib.println("  - You can export each HXML build in a separate folder by adding a \"$\" in the -o parameter.");
-		Lib.println("    Example: -o redist.$");
-		Lib.println("    This will output each build in a separate folder named redist.js, redist.swf, etc.");
+		Lib.println("  - All specificied \"Custom files\" will be copied in each redist folders (can be useful for README, LICENSE, etc.)");
 		Sys.exit(0);
 	}
 
 	static function error(msg:Dynamic) {
 		Lib.println("");
 		Lib.println("ERROR - "+Std.string(msg));
-		usage();
+		Sys.exit(1);
 	}
 }
+
 
