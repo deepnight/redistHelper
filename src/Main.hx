@@ -154,7 +154,7 @@ class Main {
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
 
-				function makeHl(hlDir:String, zipName:String, files:Array<RuntimeFile>, use32bits=false) {
+				function makeHl(hlDir:String, files:Array<RuntimeFile>, use32bits=false) {
 					initRedistDir(hlDir, extraFiles);
 
 					// Create folder
@@ -186,22 +186,29 @@ class Main {
 
 				// Package HL
 				if( directX ) {
-					makeHl(baseRedistDir+"/directx/"+projectName, "directx", RUNTIME_FILES_WIN); // directX 64 bits
+					makeHl(baseRedistDir+"/directx/"+projectName, RUNTIME_FILES_WIN); // directX 64 bits
 					if( zipping )
 						zipFolder( baseRedistDir+"/directx.zip", baseRedistDir+"/directx");
 
 					if( hasParameter("-hl32") ) {
-						makeHl(baseRedistDir+"/directx32/"+projectName, "directx32", RUNTIME_FILES_WIN, true); // directX 32 bits
+						Lib.println(" -> Packaging 32bits build...");
+						makeHl(baseRedistDir+"/directx32/"+projectName, RUNTIME_FILES_WIN, true); // directX 32 bits
 						if( zipping )
 							zipFolder( baseRedistDir+"/directx32.zip", baseRedistDir+"/directx32");
 					}
 				}
 				else {
-					makeHl(baseRedistDir+"/sdl_win/"+projectName, "sdl_win", RUNTIME_FILES_WIN); // SDL windows
+					makeHl(baseRedistDir+"/sdl_win/"+projectName, RUNTIME_FILES_WIN); // SDL windows
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_win.zip", baseRedistDir+"/sdl_win/");
+					if( hasParameter("-hl32") ) {
+						Lib.println(" -> Packaging 32bits build...");
+						makeHl(baseRedistDir+"/sdl_win32/"+projectName, RUNTIME_FILES_WIN, true); // SDL windows
+						if( zipping )
+							zipFolder( baseRedistDir+"/sdl_win32.zip", baseRedistDir+"/sdl_win32/");
+					}
 
-					makeHl(baseRedistDir+"/sdl_mac/"+projectName, "sdl_mac", RUNTIME_FILES_MAC); // SDL Mac
+					makeHl(baseRedistDir+"/sdl_mac/"+projectName, RUNTIME_FILES_MAC); // SDL Mac
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_mac.zip", baseRedistDir+"/sdl_mac/");
 				}
