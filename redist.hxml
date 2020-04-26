@@ -2,3 +2,4 @@
 -main Main
 -dce full
 -neko run.n
+-lib deepnightLibs

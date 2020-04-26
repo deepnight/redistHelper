@@ -46,6 +46,15 @@ class Main {
 
 		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
 	];
+	static var SINGLE_PARAMETERS = [
+		"-zip" => true,
+		"-h" => true,
+		"--help" => true,
+		"-z" => true,
+		"-v" => true,
+		"--verbose" => true,
+		"-hl32" => true,
+	];
 
 	static var NEW_LINE = "\n";
 
@@ -66,18 +75,25 @@ class Main {
 			usage();
 
 		// Misc parameters
-		if( hasParameter("-h") )
+		if( hasParameter("-h") || hasParameter("--help") )
 			usage();
-		verbose = hasParameter("-v");
+		verbose = hasParameter("-v") || hasParameter("--verbose");
 		var zipping = hasParameter("-zip") || hasParameter("-z");
 		var isolatedParams = getIsolatedParameters();
 
 		// Set CWD to the directory haxelib was called
-		redistHelperDir = cleanupPathWithTrailing( Sys.getCwd() );
-		projectDir = cleanupPathWithTrailing( isolatedParams.pop() ); // call directory is passed as the last param in haxelibs
-		if( projectDir==null )
-			error("Script wasn't called using: haxelib run redistHelper [...]");
-		Sys.setCwd(projectDir);
+		redistHelperDir = cleanUpDirPath( Sys.getCwd() );
+		projectDir = cleanUpDirPath( isolatedParams.pop() ); // call directory is passed as the last param in haxelibs
+		if( verbose ) {
+			Sys.println("RedistHelperDir="+redistHelperDir);
+			Sys.println("ProjectDir="+projectDir);
+		}
+		try {
+			Sys.setCwd(projectDir);
+		}
+		catch(e:Dynamic) {
+			error("Script wasn't called using: haxelib run redistHelper [...]  (projectDir="+projectDir+")");
+		}
 
 		// List HXMLs
 		var hxmlPaths = [];
@@ -138,7 +154,7 @@ class Main {
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
 
-				function makeHl(hlDir:String, zipName:String, files:Array<RuntimeFile>) {
+				function makeHl(hlDir:String, zipName:String, files:Array<RuntimeFile>, use32bits=false) {
 					initRedistDir(hlDir, extraFiles);
 
 					// Create folder
@@ -150,7 +166,7 @@ class Main {
 						Lib.println("Copying HL runtime files to "+hlDir+"... ");
 					for( r in files ) {
 						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
-							var from = findFile(r.f);
+							var from = findFile(r.f, use32bits);
 							if( verbose )
 								Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
 							var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
@@ -170,9 +186,15 @@ class Main {
 
 				// Package HL
 				if( directX ) {
-					makeHl(baseRedistDir+"/directx/"+projectName, "directx", RUNTIME_FILES_WIN); // directX, windows only
+					makeHl(baseRedistDir+"/directx/"+projectName, "directx", RUNTIME_FILES_WIN); // directX 64 bits
 					if( zipping )
 						zipFolder( baseRedistDir+"/directx.zip", baseRedistDir+"/directx");
+
+					if( hasParameter("-hl32") ) {
+						makeHl(baseRedistDir+"/directx32/"+projectName, "directx32", RUNTIME_FILES_WIN, true); // directX 32 bits
+						if( zipping )
+							zipFolder( baseRedistDir+"/directx32.zip", baseRedistDir+"/directx32");
+					}
 				}
 				else {
 					makeHl(baseRedistDir+"/sdl_win/"+projectName, "sdl_win", RUNTIME_FILES_WIN); // SDL windows
@@ -251,6 +273,8 @@ class Main {
 			zipPath+=".zip";
 
 		Lib.println("Zipping "+basePath+"...");
+		if( !verbose )
+			Lib.print(" -> ");
 
 		// List entries
 		var entries : List<haxe.zip.Entry> = new List();
@@ -299,15 +323,11 @@ class Main {
 			}
 		var w = new haxe.zip.Writer(out);
 		w.write(entries);
-		Lib.println(" -> "+zipPath+" ("+out.length+" bytes)");
+		Lib.println(" -> Created "+zipPath+" ("+out.length+" bytes)");
 		sys.io.File.saveBytes(zipPath, out.getBytes());
 	}
 
-	static inline function cleanupPathWithTrailing(path:String) {
-		return haxe.io.Path.addTrailingSlash( StringTools.replace(path, "\\", "/") );
-	}
-
-	static function findFile(f:String) {
+	static function findFile(f:String, use32bits=false) {
 		if( sys.FileSystem.exists(redistHelperDir+f) )
 			return redistHelperDir+f;
 
@@ -315,7 +335,7 @@ class Main {
 		var haxeTools = ["haxe.exe", "hl.exe", "neko.exe" ];
 		var paths = [];
 		for(path in Sys.getEnv("path").split(";")) {
-			path = cleanupPathWithTrailing(path);
+			path = cleanUpDirPath(path);
 			for(f in haxeTools)
 				if( sys.FileSystem.exists(path+f) ) {
 					paths.push(path);
@@ -323,6 +343,10 @@ class Main {
 				}
 		}
 
+		if( use32bits ) {
+			// Prioritize 32bits files over 64bits
+			paths.insert(0, redistHelperDir+"redistFiles/hl32/");  // HL
+		}
 		paths.push(redistHelperDir+"redistFiles/");
 
 		if( paths.length<=0 )
@@ -335,16 +359,27 @@ class Main {
 		throw "File not found: "+f+", lookup paths="+paths.join(", ");
 	}
 
+	static function cleanUpDirPath(path:String) {
+		var fp = dn.FilePath.fromDir(path);
+		fp.convertToSlashes();
+		return fp.directoryWithSlash;
+	}
+
 	static function initRedistDir(d:String, extraFiles:Array<ExtraCopiedFile>) {
 		Lib.println("Initializing folder: "+d+"...");
-		var cwd = StringTools.replace( Sys.getCwd(), "\\", "/" );
-		var abs = StringTools.replace( sys.FileSystem.absolutePath(d), "\\", "/" );
-		if( abs.indexOf(cwd)<0 || abs==cwd )
-			error("For security reasons, target folder should be nested inside current folder.");
-		// avoid deleting unexpected files
-		directoryContainsOnly(d, ["exe","dat","dll","hdll","js","swf","html","dylib","zip"], extraFiles.map( function(e) return e.file) );
-		removeDirectory(d);
-		createDirectory(d);
+		try {
+			var cwd = StringTools.replace( Sys.getCwd(), "\\", "/" );
+			var abs = StringTools.replace( sys.FileSystem.absolutePath(d), "\\", "/" );
+			if( abs.indexOf(cwd)<0 || abs==cwd )
+				error("For security reasons, target folder should be nested inside current folder.");
+			// avoid deleting unexpected files
+			directoryContainsOnly(d, ["exe","dat","dll","hdll","js","swf","html","dylib","zip"], extraFiles.map( function(e) return e.file) );
+			removeDirectory(d);
+			createDirectory(d);
+		}
+		catch(e:Dynamic) {
+			error("Couldn't initialize dir "+d+". Maybe it's in use or opened somewhere right now?");
+		}
 	}
 
 
@@ -366,7 +401,7 @@ class Main {
 			sys.FileSystem.createDirectory(path);
 		}
 		catch(e:Dynamic) {
-			error("Couldn't create directory "+path+" ("+e+")");
+			error("Couldn't create directory "+path+". Maybe it's in use right now? [ERR:"+e+"]");
 		}
 	}
 
@@ -482,7 +517,7 @@ class Main {
 		var ignoreNext = false;
 		for( p in Sys.args() ) {
 			if( p.charAt(0)=="-" ) {
-				if( p!="-v" && p!="-zip" && p!="-z" )
+				if( !SINGLE_PARAMETERS.exists(p) )
 					ignoreNext = true;
 			}
 			else if( !ignoreNext )
@@ -518,11 +553,12 @@ class Main {
 		Lib.println("  haxelib run redistHelper <hxml1> [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
 		Lib.println("");
 		Lib.println("OPTIONS:");
-		Lib.println("  -o <outputDir> : change the default redistHelper output dir (default: \"redist/\")");
-		Lib.println("  -p <projectName> : change the default project name (if not provided, it will use the name of the parent folder where this script is called)");
-		Lib.println("  -zip : create a zip file for each build");
-		Lib.println("  -h : show this help");
-		Lib.println("  -v : verbose mode (display more informations)");
+		Lib.println("  -o <outputDir>: change the default redistHelper output dir (default: \"redist/\")");
+		Lib.println("  -p <projectName>: change the default project name (if not provided, it will use the name of the parent folder where this script is called)");
+		Lib.println("  -hl32: when building Hashlink targets, this option will also package a 32bits version of the HL runtime in separate redist folders.");
+		Lib.println("  -zip: create a zip file for each build");
+		Lib.println("  -h: show this help");
+		Lib.println("  -v: verbose mode (display more informations)");
 		Lib.println("");
 		Lib.println("NOTES:");
 		// Lib.println("  - If no HXML is given, the script will pick all HXMLs found in current folder.");
