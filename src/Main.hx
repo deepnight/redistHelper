@@ -7,8 +7,9 @@ typedef RuntimeFile = {
 }
 
 typedef ExtraCopiedFile = {
-	var path: String;
-	var file: String;
+	var dir: String;
+	var originalFileName: String;
+	var finalFileName: String;
 }
 
 class Main {
@@ -95,16 +96,30 @@ class Main {
 			error("Script wasn't called using: haxelib run redistHelper [...]  (projectDir="+projectDir+")");
 		}
 
-		// List HXMLs
+		// List HXMLs and extra files
 		var hxmlPaths = [];
 		var extraFiles : Array<ExtraCopiedFile> = [];
 		for(p in isolatedParams)
 			if( p.indexOf(".hxml")>=0 )
 				hxmlPaths.push(p);
 			else {
-				var tmp = StringTools.replace(p,"\\","/").split("/");
-				extraFiles.push({ path:p, file:tmp[tmp.length-1] });
+				// Found an isolated filename to copy
+				var renameParts = p.split("@");
+				var originalFile = dn.FilePath.fromFile(renameParts[0]);
+				if( renameParts.length==1 )
+					extraFiles.push({ dir:originalFile.directoryWithSlash, originalFileName:originalFile.fileWithExt, finalFileName:originalFile.fileWithExt });
+				else {
+					var finalFile = dn.FilePath.fromFile(renameParts[1]);
+					extraFiles.push({ dir:originalFile.directoryWithSlash, originalFileName:originalFile.fileWithExt, finalFileName:finalFile.fileWithExt });
+				}
 			}
+		if( verbose )
+			Sys.println("ExtraFiles: "+extraFiles.map( function(e) {
+				if( e.originalFileName==e.finalFileName )
+					return e.dir+e.originalFileName;
+				else
+					return e.dir+e.originalFileName+">"+e.finalFileName;
+			} ));
 		if( hxmlPaths.length==0 ) {
 			usage();
 			// // Search for HXML in project folder if no parameter was given
@@ -137,9 +152,6 @@ class Main {
 		// Prepare base folder
 		initRedistDir(baseRedistDir, extraFiles);
 
-		var extraFilesTargets = [];
-
-
 
 		// Parse HXML files given as parameters
 		for(hxml in hxmlPaths) {
@@ -155,11 +167,11 @@ class Main {
 				Sys.command("haxe", [hxml]);
 
 				function makeHl(hlDir:String, files:Array<RuntimeFile>, use32bits=false) {
+					Lib.println("Packaging "+hlDir+"...");
 					initRedistDir(hlDir, extraFiles);
 
 					// Create folder
 					createDirectory(hlDir);
-					extraFilesTargets.push(hlDir);
 
 					// Copy runtimes
 					if( verbose )
@@ -186,29 +198,33 @@ class Main {
 
 				// Package HL
 				if( directX ) {
-					makeHl(baseRedistDir+"/directx/"+projectName, RUNTIME_FILES_WIN); // directX 64 bits
+					// DirectX 64bits
+					makeHl(baseRedistDir+"/directx/"+projectName, RUNTIME_FILES_WIN);
 					if( zipping )
 						zipFolder( baseRedistDir+"/directx.zip", baseRedistDir+"/directx");
 
+					// DirectX 32bits
 					if( hasParameter("-hl32") ) {
-						Lib.println(" -> Packaging 32bits build...");
 						makeHl(baseRedistDir+"/directx32/"+projectName, RUNTIME_FILES_WIN, true); // directX 32 bits
 						if( zipping )
 							zipFolder( baseRedistDir+"/directx32.zip", baseRedistDir+"/directx32");
 					}
 				}
 				else {
-					makeHl(baseRedistDir+"/sdl_win/"+projectName, RUNTIME_FILES_WIN); // SDL windows
+					// SDL Windows 64bits
+					makeHl(baseRedistDir+"/sdl_win/"+projectName, RUNTIME_FILES_WIN);
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_win.zip", baseRedistDir+"/sdl_win/");
+
+					// SDL Windows 32bits
 					if( hasParameter("-hl32") ) {
-						Lib.println(" -> Packaging 32bits build...");
-						makeHl(baseRedistDir+"/sdl_win32/"+projectName, RUNTIME_FILES_WIN, true); // SDL windows
+						makeHl(baseRedistDir+"/sdl_win32/"+projectName, RUNTIME_FILES_WIN, true);
 						if( zipping )
 							zipFolder( baseRedistDir+"/sdl_win32.zip", baseRedistDir+"/sdl_win32/");
 					}
 
-					makeHl(baseRedistDir+"/sdl_mac/"+projectName, RUNTIME_FILES_MAC); // SDL Mac
+					// SDL Mac
+					makeHl(baseRedistDir+"/sdl_mac/"+projectName, RUNTIME_FILES_MAC);
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_mac.zip", baseRedistDir+"/sdl_mac/");
 				}
@@ -223,8 +239,11 @@ class Main {
 
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
+
+				Lib.println("Packaging "+jsDir+"...");
 				var out = getHxmlOutput(hxml,"-js");
 				copy(out, jsDir+"/client.js");
+
 				// Create HTML
 				Lib.println("Creating HTML...");
 				var fi = sys.io.File.read(redistHelperDir+"redistFiles/webgl.html");
@@ -236,7 +255,6 @@ class Main {
 				var fo = sys.io.File.write(jsDir+"/index.html", false);
 				fo.writeString(html);
 				fo.close();
-				extraFilesTargets.push(jsDir);
 
 				copyExtraFilesIn(extraFiles, jsDir);
 				if( zipping )
@@ -252,9 +270,10 @@ class Main {
 
 				Lib.println("Building "+hxml+"...");
 				Sys.command("haxe", [hxml]);
+
+				Lib.println("Packaging "+swfDir+"...");
 				var out = getHxmlOutput(hxml,"-swf");
 				copy(out, swfDir+"/"+projectName+".swf");
-				extraFilesTargets.push(swfDir+"/"+projectName);
 
 				copyExtraFilesIn(extraFiles, swfDir);
 				if( zipping )
@@ -270,8 +289,8 @@ class Main {
 	static function copyExtraFilesIn(extraFiles:Array<ExtraCopiedFile>, targetPath:String) {
 		for(f in extraFiles) {
 			if( verbose )
-				Lib.println(" -> Copying file "+f.path+" to "+targetPath+"...");
-			copy(projectDir+f.path, targetPath+"/"+f.file);
+				Lib.println(" -> Copying file "+projectDir+f.dir+f.originalFileName+" to "+targetPath+"/"+f.finalFileName);
+			copy(projectDir+f.dir+f.originalFileName, targetPath+"/"+f.finalFileName);
 		}
 	}
 
@@ -373,14 +392,19 @@ class Main {
 	}
 
 	static function initRedistDir(d:String, extraFiles:Array<ExtraCopiedFile>) {
-		Lib.println("Initializing folder: "+d+"...");
+		if( verbose )
+			Lib.println("Initializing folder: "+d+"...");
 		try {
 			var cwd = StringTools.replace( Sys.getCwd(), "\\", "/" );
 			var abs = StringTools.replace( sys.FileSystem.absolutePath(d), "\\", "/" );
 			if( abs.indexOf(cwd)<0 || abs==cwd )
 				error("For security reasons, target folder should be nested inside current folder.");
 			// avoid deleting unexpected files
-			directoryContainsOnly(d, ["exe","dat","dll","hdll","js","swf","html","dylib","zip"], extraFiles.map( function(e) return e.file) );
+			directoryContainsOnly(
+				d,
+				["exe","dat","dll","hdll","js","swf","html","dylib","zip"],
+				extraFiles.map( function(e) return e.finalFileName)
+			);
 			removeDirectory(d);
 			createDirectory(d);
 		}
@@ -559,6 +583,11 @@ class Main {
 		Lib.println("USAGE:");
 		Lib.println("  haxelib run redistHelper <hxml1> [<hxml2>] [<hxml3>] [customFile1] [customFile2]");
 		Lib.println("");
+		Lib.println("EXAMPLES:");
+		Lib.println("  haxelib run redistHelper myGame.hxml");
+		Lib.println("  haxelib run redistHelper myGame.hxml docs/CHANGELOG.md docs/LICENSE");
+		Lib.println("  haxelib run redistHelper myGame.hxml docs/README@read_me.txt");
+		Lib.println("");
 		Lib.println("OPTIONS:");
 		Lib.println("  -o <outputDir>: change the default redistHelper output dir (default: \"redist/\")");
 		Lib.println("  -p <projectName>: change the default project name (if not provided, it will use the name of the parent folder where this script is called)");
@@ -570,6 +599,10 @@ class Main {
 		Lib.println("NOTES:");
 		// Lib.println("  - If no HXML is given, the script will pick all HXMLs found in current folder.");
 		Lib.println("  - All specificied \"Custom files\" will be copied in each redist folders (can be useful for README, LICENSE, etc.)");
+		Lib.println("  - Custom files can be renamed after copy, just add \"@\" followed by the final name after the file path. Example:");
+		Lib.println("      haxelib run redistHelper myGame.hxml docs/README@read_me.txt");
+		Lib.println("      The \"README\" file from docs/ will be renamed to \"read_me.txt\" in the target folder.");
+		Lib.println("");
 		Sys.exit(0);
 	}
 
