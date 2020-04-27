@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "classPath": "src/",
-  "releasenote": "Added support for Zip, changed the output directory structure, more infos: haxelib run redistHelper",
+  "releasenote": "Added Hashlink 32bits support, added files renaming support",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
