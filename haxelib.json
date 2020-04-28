@@ -4,9 +4,11 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "classPath": "src/",
-  "releasenote": "Added Hashlink 32bits support, added files renaming support",
+  "releasenote": "Fixed dependencies",
   "contributors": ["sbenard"],
-  "dependencies": {}
+  "dependencies": {
+    "deepnightLibs":""
+  }
 }
