@@ -14,8 +14,22 @@ typedef ExtraCopiedFile = {
 
 class Main {
 	static var NEKO_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
-		{ lib:null, f:"neko.dll" },
 		{ lib:null, f:"neko.lib" },
+
+		{ lib:null, f:"concrt140.dll" },
+		{ lib:null, f:"gcmt-dll.dll" },
+		{ lib:null, f:"msvcp140.dll" },
+		{ lib:null, f:"neko.dll" },
+		{ lib:null, f:"vcruntime140.dll" },
+
+		{ lib:null, f:"mysql.ndll" },
+		{ lib:null, f:"mysql5.ndll" },
+		{ lib:null, f:"regexp.ndll" },
+		{ lib:null, f:"sqlite.ndll" },
+		{ lib:null, f:"ssl.ndll" },
+		{ lib:null, f:"std.ndll" },
+		{ lib:null, f:"ui.ndll" },
+		{ lib:null, f:"zlib.ndll" },
 	];
 
 	static var HL_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
@@ -176,9 +190,9 @@ class Main {
 				var directX = content.indexOf("hldx")>0;
 
 				Lib.println("Building "+hxml+"...");
-				Sys.command("haxe", [hxml]);
+				compile(hxml);
 
-				function makeHl(hlDir:String, files:Array<RuntimeFile>, use32bits=false) {
+				function makeHl(hlDir:String, files:Array<RuntimeFile>, use32bits:Bool) {
 					Lib.println("Packaging "+hlDir+"...");
 					initRedistDir(hlDir, extraFiles);
 
@@ -186,7 +200,7 @@ class Main {
 					createDirectory(hlDir);
 
 					// Runtimes
-					copyRuntimeFiles(hxml, "HL", hlDir, files);
+					copyRuntimeFiles(hxml, "HL", hlDir, files, use32bits);
 
 					// Copy HL bin file
 					var out = getHxmlOutput(hxml,"-hl");
@@ -198,7 +212,7 @@ class Main {
 				// Package HL
 				if( directX ) {
 					// DirectX 64bits
-					makeHl(baseRedistDir+"/directx/"+projectName, HL_RUNTIME_FILES_WIN);
+					makeHl(baseRedistDir+"/directx/"+projectName, HL_RUNTIME_FILES_WIN, false);
 					if( zipping )
 						zipFolder( baseRedistDir+"/directx.zip", baseRedistDir+"/directx");
 
@@ -211,7 +225,7 @@ class Main {
 				}
 				else {
 					// SDL Windows 64bits
-					makeHl(baseRedistDir+"/sdl_win/"+projectName, HL_RUNTIME_FILES_WIN);
+					makeHl(baseRedistDir+"/sdl_win/"+projectName, HL_RUNTIME_FILES_WIN, false);
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_win.zip", baseRedistDir+"/sdl_win/");
 
@@ -223,7 +237,7 @@ class Main {
 					}
 
 					// SDL Mac
-					makeHl(baseRedistDir+"/sdl_mac/"+projectName, HL_RUNTIME_FILES_MAC);
+					makeHl(baseRedistDir+"/sdl_mac/"+projectName, HL_RUNTIME_FILES_MAC, false);
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_mac.zip", baseRedistDir+"/sdl_mac/");
 				}
@@ -237,7 +251,7 @@ class Main {
 				initRedistDir(jsDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
-				Sys.command("haxe", [hxml]);
+				compile(hxml);
 
 				Lib.println("Packaging "+jsDir+"...");
 				var out = getHxmlOutput(hxml,"-js");
@@ -268,7 +282,7 @@ class Main {
 				initRedistDir(nekoDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
-				Sys.command("haxe", [hxml]);
+				compile(hxml);
 
 				Lib.println("Creating executable...");
 				var out = dn.FilePath.fromFile( getHxmlOutput(hxml,"-neko") );
@@ -278,7 +292,7 @@ class Main {
 				Lib.println("Packaging "+nekoDir+"...");
 				copy(out.full, nekoDir+"/"+projectName+".exe");
 
-				copyRuntimeFiles(hxml, "Neko", nekoDir, NEKO_RUNTIME_FILES_WIN);
+				copyRuntimeFiles(hxml, "Neko", nekoDir, NEKO_RUNTIME_FILES_WIN, false);
 
 				copyExtraFilesIn(extraFiles, nekoDir);
 				if( zipping )
@@ -293,7 +307,7 @@ class Main {
 				initRedistDir(swfDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
-				Sys.command("haxe", [hxml]);
+				compile(hxml);
 
 				Lib.println("Packaging "+swfDir+"...");
 				var out = getHxmlOutput(hxml,"-swf");
@@ -310,12 +324,18 @@ class Main {
 		Lib.println("Done.");
 	}
 
-	static function copyRuntimeFiles(hxmlPath:String, targetName:String, targetDir:String, runTimeFiles:Array<RuntimeFile>) {
+	static function compile(hxmlPath:String) {
+		var code = Sys.command("haxe", [hxmlPath]);
+		if( code!=0 )
+			error('Compilation failed (error code $code)');
+	}
+
+	static function copyRuntimeFiles(hxmlPath:String, targetName:String, targetDir:String, runTimeFiles:Array<RuntimeFile>, useHl32bits:Bool) {
 		if( verbose )
 			Lib.println("Copying "+targetName+" runtime files to "+targetDir+"... ");
 		for( r in runTimeFiles ) {
 			if( r.lib==null || hxmlRequiresLib(hxmlPath, r.lib) ) {
-				var from = findFile(r.f);
+				var from = findFile(r.f, useHl32bits);
 				if( verbose )
 					Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
 				var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
@@ -421,7 +441,7 @@ class Main {
 		sys.io.File.saveBytes(zipPath, out.getBytes());
 	}
 
-	static function findFile(f:String, use32bits=false) {
+	static function findFile(f:String, useHl32bits:Bool) {
 		if( sys.FileSystem.exists(redistHelperDir+f) )
 			return redistHelperDir+f;
 
@@ -437,7 +457,7 @@ class Main {
 				}
 		}
 
-		if( use32bits ) {
+		if( useHl32bits ) {
 			// Prioritize 32bits files over 64bits
 			paths.insert(0, redistHelperDir+"redistFiles/hl32/");  // HL
 		}
@@ -482,7 +502,7 @@ class Main {
 			// avoid deleting unexpected files
 			directoryContainsOnly(
 				d,
-				["exe","dat","dll","hdll","js","swf","html","dylib","zip","lib"],
+				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib"],
 				allExtraFiles
 			);
 			dn.FileTools.deleteDirectoryRec(d);
