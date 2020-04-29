@@ -7,13 +7,18 @@ typedef RuntimeFile = {
 }
 
 typedef ExtraCopiedFile = {
-	var dir: String;
-	var originalFileName: String;
-	var finalFileName: String;
+	var source : dn.FilePath;
+	var isDir : Bool;
+	var rename: Null<String>;
 }
 
 class Main {
-	static var RUNTIME_FILES_WIN : Array<RuntimeFile> = [
+	static var NEKO_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
+		{ lib:null, f:"neko.dll" },
+		{ lib:null, f:"neko.lib" },
+	];
+
+	static var HL_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
 		{ lib:null, f:"hl.exe", executableFormat:"$.exe" },
 		{ lib:null, f:"libhl.dll" },
 		{ lib:null, f:"msvcr120.dll" },
@@ -34,7 +39,7 @@ class Main {
 		{ lib:"hldx", f:"directx.hdll" },
 		{ lib:"hldx", f:"d3dcompiler_47.dll" },
 	];
-	static var RUNTIME_FILES_MAC : Array<RuntimeFile> = [
+	static var HL_RUNTIME_FILES_MAC : Array<RuntimeFile> = [
 		{ lib:null, f:"redistFiles/mac/hl", executableFormat:"$" },
 		{ lib:null, f:"redistFiles/mac/libhl.dylib" },
 		{ lib:null, f:"redistFiles/mac/libpng16.16.dylib" }, // fmt
@@ -61,6 +66,7 @@ class Main {
 
 	static var redistHelperDir = "";
 	static var projectDir = "";
+	static var projectName = "unknown";
 	static var verbose = false;
 
 
@@ -71,6 +77,7 @@ class Main {
 
 			Lib.println(Std.string(m));
 		}
+		dn.FilePath.SLASH_MODE = OnlySlashes;
 
 		if( Sys.args().length==0 )
 			usage();
@@ -103,23 +110,28 @@ class Main {
 			if( p.indexOf(".hxml")>=0 )
 				hxmlPaths.push(p);
 			else {
-				// Found an isolated filename to copy
+				// Found an isolated extra file to copy
 				var renameParts = p.split("@");
-				var originalFile = dn.FilePath.fromFile(renameParts[0]);
+				var path = renameParts[0];
+				if( !sys.FileSystem.exists(path) )
+					error("File not found: "+path);
+
+				var isDir = sys.FileSystem.isDirectory(path);
+				var originalFile = isDir ? dn.FilePath.fromDir(path) : dn.FilePath.fromFile(path);
 				if( renameParts.length==1 )
-					extraFiles.push({ dir:originalFile.directoryWithSlash, originalFileName:originalFile.fileWithExt, finalFileName:originalFile.fileWithExt });
-				else {
-					var finalFile = dn.FilePath.fromFile(renameParts[1]);
-					extraFiles.push({ dir:originalFile.directoryWithSlash, originalFileName:originalFile.fileWithExt, finalFileName:finalFile.fileWithExt });
-				}
-			}
-		if( verbose )
-			Sys.println("ExtraFiles: "+extraFiles.map( function(e) {
-				if( e.originalFileName==e.finalFileName )
-					return e.dir+e.originalFileName;
+					extraFiles.push({ source:originalFile, rename:null, isDir:isDir });
 				else
-					return e.dir+e.originalFileName+">"+e.finalFileName;
-			} ));
+					extraFiles.push({ source:originalFile, rename:renameParts[1], isDir:isDir });
+			}
+		if( verbose ) {
+			Sys.println("ExtraFiles listing:");
+			for(e in extraFiles) {
+				Sys.println( " -> "+e.source.full
+					+ ( e.rename!=null ? " >> "+e.rename : "" )
+					+ ( e.isDir ? " [DIRECTORY]" : "" )
+				);
+			}
+		}
 		if( hxmlPaths.length==0 ) {
 			usage();
 			// // Search for HXML in project folder if no parameter was given
@@ -134,7 +146,7 @@ class Main {
 		}
 
 		// Project name
-		var projectName = getParameter("-p");
+		projectName = getParameter("-p");
 		if( projectName==null ) {
 			var split = projectDir.split("/");
 			projectName = split[split.length-2];
@@ -173,21 +185,8 @@ class Main {
 					// Create folder
 					createDirectory(hlDir);
 
-					// Copy runtimes
-					if( verbose )
-						Lib.println("Copying HL runtime files to "+hlDir+"... ");
-					for( r in files ) {
-						if( r.lib==null || hxmlRequiresLib(hxml, r.lib) ) {
-							var from = findFile(r.f, use32bits);
-							if( verbose )
-								Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
-							var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
-							var to = hlDir+"/"+toFile;
-							if( r.executableFormat!=null && verbose )
-								Lib.println(" -> Renamed executable to "+toFile);
-							copy(from, to);
-						}
-					}
+					// Runtimes
+					copyRuntimeFiles(hxml, "HL", hlDir, files);
 
 					// Copy HL bin file
 					var out = getHxmlOutput(hxml,"-hl");
@@ -199,32 +198,32 @@ class Main {
 				// Package HL
 				if( directX ) {
 					// DirectX 64bits
-					makeHl(baseRedistDir+"/directx/"+projectName, RUNTIME_FILES_WIN);
+					makeHl(baseRedistDir+"/directx/"+projectName, HL_RUNTIME_FILES_WIN);
 					if( zipping )
 						zipFolder( baseRedistDir+"/directx.zip", baseRedistDir+"/directx");
 
 					// DirectX 32bits
 					if( hasParameter("-hl32") ) {
-						makeHl(baseRedistDir+"/directx32/"+projectName, RUNTIME_FILES_WIN, true); // directX 32 bits
+						makeHl(baseRedistDir+"/directx32/"+projectName, HL_RUNTIME_FILES_WIN, true); // directX 32 bits
 						if( zipping )
 							zipFolder( baseRedistDir+"/directx32.zip", baseRedistDir+"/directx32");
 					}
 				}
 				else {
 					// SDL Windows 64bits
-					makeHl(baseRedistDir+"/sdl_win/"+projectName, RUNTIME_FILES_WIN);
+					makeHl(baseRedistDir+"/sdl_win/"+projectName, HL_RUNTIME_FILES_WIN);
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_win.zip", baseRedistDir+"/sdl_win/");
 
 					// SDL Windows 32bits
 					if( hasParameter("-hl32") ) {
-						makeHl(baseRedistDir+"/sdl_win32/"+projectName, RUNTIME_FILES_WIN, true);
+						makeHl(baseRedistDir+"/sdl_win32/"+projectName, HL_RUNTIME_FILES_WIN, true);
 						if( zipping )
 							zipFolder( baseRedistDir+"/sdl_win32.zip", baseRedistDir+"/sdl_win32/");
 					}
 
 					// SDL Mac
-					makeHl(baseRedistDir+"/sdl_mac/"+projectName, RUNTIME_FILES_MAC);
+					makeHl(baseRedistDir+"/sdl_mac/"+projectName, HL_RUNTIME_FILES_MAC);
 					if( zipping )
 						zipFolder( baseRedistDir+"/sdl_mac.zip", baseRedistDir+"/sdl_mac/");
 				}
@@ -263,6 +262,31 @@ class Main {
 				Lib.println("");
 			}
 
+			// Neko
+			if( content.indexOf("-neko ")>=0 ) {
+				var nekoDir = baseRedistDir+"/neko";
+				initRedistDir(nekoDir, extraFiles);
+
+				Lib.println("Building "+hxml+"...");
+				Sys.command("haxe", [hxml]);
+
+				Lib.println("Creating executable...");
+				var out = dn.FilePath.fromFile( getHxmlOutput(hxml,"-neko") );
+				Sys.command("nekotools", ["boot",out.full]);
+				out.extension = "exe";
+
+				Lib.println("Packaging "+nekoDir+"...");
+				copy(out.full, nekoDir+"/"+projectName+".exe");
+
+				copyRuntimeFiles(hxml, "Neko", nekoDir, NEKO_RUNTIME_FILES_WIN);
+
+				copyExtraFilesIn(extraFiles, nekoDir);
+				if( zipping )
+					zipFolder( baseRedistDir+"/neko.zip", nekoDir);
+
+				Lib.println("");
+			}
+
 			// SWF
 			if( content.indexOf("-swf ")>=0 ) {
 				var swfDir = baseRedistDir+"/swf";
@@ -286,11 +310,55 @@ class Main {
 		Lib.println("Done.");
 	}
 
+	static function copyRuntimeFiles(hxmlPath:String, targetName:String, targetDir:String, runTimeFiles:Array<RuntimeFile>) {
+		if( verbose )
+			Lib.println("Copying "+targetName+" runtime files to "+targetDir+"... ");
+		for( r in runTimeFiles ) {
+			if( r.lib==null || hxmlRequiresLib(hxmlPath, r.lib) ) {
+				var from = findFile(r.f);
+				if( verbose )
+					Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
+				var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
+				var to = targetDir+"/"+toFile;
+				if( r.executableFormat!=null && verbose )
+					Lib.println(" -> Renamed executable to "+toFile);
+				copy(from, to);
+			}
+		}
+
+	}
+
 	static function copyExtraFilesIn(extraFiles:Array<ExtraCopiedFile>, targetPath:String) {
+		if( extraFiles.length==0 )
+			return;
+
+		Sys.println("Copying extra files to "+targetPath+"...");
+
 		for(f in extraFiles) {
-			if( verbose )
-				Lib.println(" -> Copying file "+projectDir+f.dir+f.originalFileName+" to "+targetPath+"/"+f.finalFileName);
-			copy(projectDir+f.dir+f.originalFileName, targetPath+"/"+f.finalFileName);
+			if( f.isDir ) {
+				// Copy a directory structure
+				if( verbose )
+					Lib.println(" -> DIRECTORY: "+projectDir+f.source.full+" to "+targetPath);
+				dn.FileTools.copyDirectoryRec(f.source.full, targetPath);
+
+				// Rename
+				if( f.rename!=null ) {
+					var arr = f.source.getDirectoryArray();
+					var folderName = arr[arr.length-1];
+					if( verbose )
+						Lib.println("   -> renaming "+targetPath+"/"+folderName+" to: "+targetPath+"/"+f.rename);
+					sys.FileSystem.rename(targetPath+"/"+folderName, targetPath+"/"+f.rename);
+				}
+			}
+			else {
+				// Copy a file
+				var to = f.source.fileWithExt;
+				if( f.rename!=null )
+					to = f.rename;
+				if( verbose )
+					Lib.println(" -> "+projectDir+f.source.full+" to "+targetPath+"/"+to);
+				copy(projectDir+f.source.full, targetPath+"/"+to);
+			}
 		}
 	}
 
@@ -387,7 +455,7 @@ class Main {
 
 	static function cleanUpDirPath(path:String) {
 		var fp = dn.FilePath.fromDir(path);
-		fp.convertToSlashes();
+		fp.useSlashes();
 		return fp.directoryWithSlash;
 	}
 
@@ -395,6 +463,18 @@ class Main {
 		if( verbose )
 			Lib.println("Initializing folder: "+d+"...");
 		try {
+			// List all extra files, including folders content
+			var allExtraFiles = [];
+			for(f in extraFiles)
+				if( !f.isDir )
+					allExtraFiles.push(f.rename!=null ? f.rename : f.source.fileWithExt);
+				else {
+					var all = dn.FileTools.listAllFilesRec(f.source.full);
+					for(f in all.files)
+						allExtraFiles.push( dn.FilePath.extractFileWithExt(f) );
+				}
+
+
 			var cwd = StringTools.replace( Sys.getCwd(), "\\", "/" );
 			var abs = StringTools.replace( sys.FileSystem.absolutePath(d), "\\", "/" );
 			if( abs.indexOf(cwd)<0 || abs==cwd )
@@ -402,10 +482,10 @@ class Main {
 			// avoid deleting unexpected files
 			directoryContainsOnly(
 				d,
-				["exe","dat","dll","hdll","js","swf","html","dylib","zip"],
-				extraFiles.map( function(e) return e.finalFileName)
+				["exe","dat","dll","hdll","js","swf","html","dylib","zip","lib"],
+				allExtraFiles
 			);
-			removeDirectory(d);
+			dn.FileTools.deleteDirectoryRec(d);
 			createDirectory(d);
 		}
 		catch(e:Dynamic) {
