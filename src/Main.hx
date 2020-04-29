@@ -667,6 +667,7 @@ class Main {
 		Lib.println("  haxelib run redistHelper myGame.hxml");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/CHANGELOG.md docs/LICENSE");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/README@read_me.txt");
+		Lib.println("  haxelib run redistHelper myGame.hxml docs/");
 		Lib.println("");
 		Lib.println("OPTIONS:");
 		Lib.println("  -o <outputDir>: change the default redistHelper output dir (default: \"redist/\")");
@@ -677,8 +678,8 @@ class Main {
 		Lib.println("  -v: verbose mode (display more informations)");
 		Lib.println("");
 		Lib.println("NOTES:");
-		// Lib.println("  - If no HXML is given, the script will pick all HXMLs found in current folder.");
-		Lib.println("  - All specificied \"Custom files\" will be copied in each redist folders (can be useful for README, LICENSE, etc.)");
+		Lib.println("  - All specified \"Custom files\" will be copied in each redist folders (can be useful for README, LICENSE, etc.).");
+		Lib.println("  - You can specify folders to copy among \"Custom files\".");
 		Lib.println("  - Custom files can be renamed after copy, just add \"@\" followed by the final name after the file path. Example:");
 		Lib.println("      haxelib run redistHelper myGame.hxml docs/README@read_me.txt");
 		Lib.println("      The \"README\" file from docs/ will be renamed to \"read_me.txt\" in the target folder.");
