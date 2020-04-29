@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "classPath": "src/",
-  "releasenote": "Fixed dependencies",
+  "releasenote": "Added support for folder copying, added Neko packaging",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
