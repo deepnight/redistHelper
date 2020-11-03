@@ -19,9 +19,9 @@ NOTES:
     If no HXML is given, the script will pick all HXMLs found in current directory.
     If no Project Name is set, the current folder name will be used.
 EXAMPLES:
-    haxelib run redisHelper      // automatically finds HXMLs and build them into ./redist/
-    haxelib run redisHelper hashlink.hxml -o someFolder -p MyGreatGame
-    haxelib run redisHelper hashlink.hxml flash.hxml webgl.hxml
+    haxelib run redistHelper      // automatically finds HXMLs and build them into ./redist/
+    haxelib run redistHelper hashlink.hxml -o someFolder -p MyGreatGame
+    haxelib run redistHelper hashlink.hxml flash.hxml webgl.hxml
 ```
 
 ## Parameters
