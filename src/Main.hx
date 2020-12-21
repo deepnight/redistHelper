@@ -66,6 +66,10 @@ class Main {
 
 		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
 	];
+
+	static var SWF_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
+		{ lib:null, f:"redistFiles/flash/win_flashplayer_32_sa.exe", executableFormat:"flashPlayer.bin" },
+	];
 	static var SINGLE_PARAMETERS = [
 		"-zip" => true,
 		"-h" => true,
@@ -312,6 +316,13 @@ class Main {
 				Lib.println("Packaging "+swfDir+"...");
 				var out = getHxmlOutput(hxml,"-swf");
 				copy(out, swfDir+"/"+projectName+".swf");
+				copyRuntimeFiles(hxml, "SWF", swfDir, SWF_RUNTIME_FILES_WIN, false);
+
+				var script = [
+					'@echo off',
+					'start flashPlayer.bin $projectName.swf',
+				];
+				createTextFile('$swfDir/Play $projectName.bat', script.join("\n"));
 
 				copyExtraFilesIn(extraFiles, swfDir);
 				if( zipping )
@@ -322,6 +333,10 @@ class Main {
 		}
 
 		Lib.println("Done.");
+	}
+
+	static function createTextFile(path:String, content:String) {
+		sys.io.File.saveContent(path, content);
 	}
 
 	static function compile(hxmlPath:String) {
@@ -345,7 +360,6 @@ class Main {
 				copy(from, to);
 			}
 		}
-
 	}
 
 	static function copyExtraFilesIn(extraFiles:Array<ExtraCopiedFile>, targetPath:String) {
@@ -502,7 +516,7 @@ class Main {
 			// avoid deleting unexpected files
 			directoryContainsOnly(
 				d,
-				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib"],
+				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin"],
 				allExtraFiles
 			);
 			dn.FileTools.deleteDirectoryRec(d);
