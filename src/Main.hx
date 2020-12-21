@@ -218,32 +218,32 @@ class Main {
 					// DirectX 64bits
 					makeHl(baseRedistDir+"/directx/"+projectName, HL_RUNTIME_FILES_WIN, false);
 					if( zipping )
-						zipFolder( '$baseRedistDir/$projectName.directx.zip', baseRedistDir+"/directx");
+						zipFolder( '$baseRedistDir/${projectName}_directx.zip', baseRedistDir+"/directx");
 
 					// DirectX 32bits
 					if( hasParameter("-hl32") ) {
 						makeHl(baseRedistDir+"/directx32/"+projectName, HL_RUNTIME_FILES_WIN, true); // directX 32 bits
 						if( zipping )
-							zipFolder( '$baseRedistDir/$projectName.directx32.zip', baseRedistDir+"/directx32");
+							zipFolder( '$baseRedistDir/${projectName}_directx32.zip', baseRedistDir+"/directx32");
 					}
 				}
 				else {
 					// SDL Windows 64bits
 					makeHl(baseRedistDir+"/opengl_win/"+projectName, HL_RUNTIME_FILES_WIN, false);
 					if( zipping )
-						zipFolder( '$baseRedistDir/$projectName.opengl_win.zip', baseRedistDir+"/opengl_win/");
+						zipFolder( '$baseRedistDir/${projectName}_opengl_win.zip', baseRedistDir+"/opengl_win/");
 
 					// SDL Windows 32bits
 					if( hasParameter("-hl32") ) {
 						makeHl(baseRedistDir+"/opengl_win32/"+projectName, HL_RUNTIME_FILES_WIN, true);
 						if( zipping )
-							zipFolder( '$baseRedistDir/$projectName.opengl_win32.zip', baseRedistDir+"/opengl_win32/");
+							zipFolder( '$baseRedistDir/${projectName}_opengl_win32.zip', baseRedistDir+"/opengl_win32/");
 					}
 
 					// SDL Mac
 					makeHl(baseRedistDir+"/opengl_mac/"+projectName, HL_RUNTIME_FILES_MAC, false);
 					if( zipping )
-						zipFolder( '$baseRedistDir/$projectName.opengl_mac.zip', baseRedistDir+"/opengl_mac/");
+						zipFolder( '$baseRedistDir/${projectName}_opengl_mac.zip', baseRedistDir+"/opengl_mac/");
 				}
 				Sys.println("");
 			}
