@@ -8,7 +8,7 @@
             "type": "hxml",
             "file": "redist.hxml",
             "presentation": {
-                "reveal": "always",
+                "reveal": "never",
                 "panel": "dedicated",
                 "clear": true
             },
