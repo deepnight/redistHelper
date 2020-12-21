@@ -307,7 +307,7 @@ class Main {
 
 			// SWF
 			if( content.indexOf("-swf ")>=0 ) {
-				var swfDir = baseRedistDir+"/swf";
+				var swfDir = '$baseRedistDir/flash/$projectName';
 				initRedistDir(swfDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
