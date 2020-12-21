@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "classPath": "src/",
-  "releasenote": "Fixed HL 32bits packaging",
+  "releasenote": "Added FlashPlayer projector packaging (Windows only)",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
