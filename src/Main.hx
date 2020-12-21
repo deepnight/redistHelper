@@ -516,7 +516,7 @@ class Main {
 			// avoid deleting unexpected files
 			directoryContainsOnly(
 				d,
-				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin"],
+				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat"],
 				allExtraFiles
 			);
 			dn.FileTools.deleteDirectoryRec(d);
