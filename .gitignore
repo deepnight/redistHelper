@@ -2,3 +2,4 @@ res/.tmp
 art/export
 redist
 bin/*.*
+.vscode/settings.json
