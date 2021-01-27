@@ -532,6 +532,12 @@ class Main {
 		var lines = sys.io.File.read(f, false).readAll().toString().split(NEW_LINE);
 		var i = 0;
 		while( i<lines.length ) {
+
+			// trims the comment content from the line.
+			var commentHash = lines[i].indexOf("#");
+			if( commentHash >= 0 )
+				lines[i] = lines[i].substr(0, commentHash);
+
 			if( lines[i].indexOf(".hxml")>=0 && lines[i].indexOf("-cmd")<0 )
 				lines[i] = getFullHxml(lines[i]);
 			i++;
