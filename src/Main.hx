@@ -480,25 +480,24 @@ class Main {
 		var paths = [];
 		var pathName;
 		var pathSeparator;
-		Lib.println(Sys.systemName());
 		if (Sys.systemName() == "Windows") {
 			pathName = "path";
 			pathSeparator = ";";
-			haxeTools = ["haxe.exe", "hl.exe", "neko.exe" ];
+			haxeTools = [ "haxe.exe", "hl.exe", "neko.exe" ];
 		}
 		else {
 			pathName = "PATH";
 			pathSeparator = ":";
-			haxeTools = [ "haxe", "hl", "haxelib" ]
+			haxeTools = [ "haxe", "hl", "haxelib" ];
 		}
-		Lib.println(Sys.getEnv(pathName));
 		for(path in Sys.getEnv(pathName).split(pathSeparator)) {
 			path = cleanUpDirPath(path);
-			for(f in haxeTools)
+			for(f in haxeTools) {
 				if( sys.FileSystem.exists(path+f) ) {
 					paths.push(path);
 					break;
 				}
+			}
 		}
 
 		if( useHl32bits ) {
@@ -511,8 +510,9 @@ class Main {
 			throw "Haxe tools not found ("+haxeTools.join(", ")+") in PATH!";
 
 		for(path in paths)
-			if( sys.FileSystem.exists(path+f) )
-				return path+f;
+			for (f in haxeTools)
+				if( sys.FileSystem.exists(path+f) )
+					return path+f;
 
 		throw "File not found: "+f+", lookup paths="+paths.join(", ");
 	}
