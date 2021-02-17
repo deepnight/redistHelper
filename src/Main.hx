@@ -31,7 +31,6 @@ class Main {
 		{ lib:null, f:"ui.ndll" },
 		{ lib:null, f:"zlib.ndll" },
 	];
-
 	static var HL_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
 		{ lib:null, f:"hl.exe", executableFormat:"$.exe" },
 		{ lib:null, f:"libhl.dll" },
@@ -66,7 +65,19 @@ class Main {
 
 		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
 	];
+	static var HL_RUNTIME_FILES_LINUX : Array<RuntimeFile> = [
+		{ lib:null, f:"redistFiles/mac/hl", executableFormat:"$" },
+		{ lib:null, f:"redistFiles/mac/libhl.dylib" },
+		{ lib:null, f:"redistFiles/mac/libpng16.16.dylib" }, // fmt
+		{ lib:null, f:"redistFiles/mac/libvorbis.0.dylib" }, // fmt
+		{ lib:null, f:"redistFiles/mac/libvorbisfile.3.dylib" }, // fmt
+		{ lib:null, f:"redistFiles/mac/libmbedtls.10.dylib" }, // SSL
 
+		{ lib:"heaps", f:"redistFiles/mac/libuv.1.dylib" },
+		{ lib:"heaps", f:"redistFiles/mac/libopenal.1.dylib" },
+
+		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
+	];
 	static var SWF_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
 		{ lib:null, f:"redistFiles/flash/win_flashplayer_32_sa.exe", executableFormat:"flashPlayer.bin" },
 	];
@@ -244,6 +255,11 @@ class Main {
 					makeHl(baseRedistDir+"/opengl_mac/"+projectName, HL_RUNTIME_FILES_MAC, false);
 					if( zipping )
 						zipFolder( '$baseRedistDir/${projectName}_opengl_mac.zip', baseRedistDir+"/opengl_mac/");
+
+					// SDL Linux
+					makeHl(baseRedistDir+"/opengl_linux/"+projectName, HL_RUNTIME_FILES_LINUX, false);
+					if( zipping )
+						zipFolder( '$baseRedistDir/${projectName}_opengl_linux.zip', baseRedistDir+"/opengl_linux/");
 				}
 				Sys.println("");
 			}
@@ -460,9 +476,21 @@ class Main {
 			return redistHelperDir+f;
 
 		// Locate haxe tools
-		var haxeTools = ["haxe.exe", "hl.exe", "neko.exe" ];
+		var haxeTools;
 		var paths = [];
-		for(path in Sys.getEnv("path").split(";")) {
+		var pathName;
+		var pathSeparator;
+		if (Sys.systemName() == "Windows") {
+            pathName = "path";
+            pathSeparator = ";";
+			haxeTools = ["haxe.exe", "hl.exe", "neko.exe" ];
+        }
+        else {
+            pathName = "PATH";
+            pathSeparator = ":";
+			haxeTools = [ "haxe", "hl", "haxelib" ]
+        }
+		for(path in Sys.getEnv(pathName).split(pathSeparator)) {
 			path = cleanUpDirPath(path);
 			for(f in haxeTools)
 				if( sys.FileSystem.exists(path+f) ) {
