@@ -480,6 +480,7 @@ class Main {
 		var paths = [];
 		var pathName;
 		var pathSeparator;
+		trace(Sys.systemName());
 		if (Sys.systemName() == "Windows") {
             pathName = "path";
             pathSeparator = ";";
@@ -490,6 +491,7 @@ class Main {
             pathSeparator = ":";
 			haxeTools = [ "haxe", "hl", "haxelib" ]
         }
+		trace(Sys.getEnv(pathName));
 		for(path in Sys.getEnv(pathName).split(pathSeparator)) {
 			path = cleanUpDirPath(path);
 			for(f in haxeTools)
