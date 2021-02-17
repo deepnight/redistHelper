@@ -66,17 +66,26 @@ class Main {
 		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
 	];
 	static var HL_RUNTIME_FILES_LINUX : Array<RuntimeFile> = [
-		{ lib:null, f:"redistFiles/mac/hl", executableFormat:"$" },
-		{ lib:null, f:"redistFiles/mac/libhl.dylib" },
-		{ lib:null, f:"redistFiles/mac/libpng16.16.dylib" }, // fmt
-		{ lib:null, f:"redistFiles/mac/libvorbis.0.dylib" }, // fmt
-		{ lib:null, f:"redistFiles/mac/libvorbisfile.3.dylib" }, // fmt
-		{ lib:null, f:"redistFiles/mac/libmbedtls.10.dylib" }, // SSL
+		{ lib:null, f:"redistFiles/linux/hl", executableFormat:"$" },
+		{ lib:null, f:"redistFiles/linux/libhl.so" },
+		{ lib:null, f:"redistFiles/linux/hl.sh", executableFormat:"$.sh" },
 
-		{ lib:"heaps", f:"redistFiles/mac/libuv.1.dylib" },
-		{ lib:"heaps", f:"redistFiles/mac/libopenal.1.dylib" },
+		{ lib:null, f:"fmt.hdll" },
+		{ lib:null, f:"redistFiles/linux/libpng16.so" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libvorbis.so" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libvorbisfile.so" }, // fmt
 
-		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
+		{ lib:null, f:"ssl.hdll" },
+		{ lib:null, f:"redistFiles/linux/libmbedtls.so" }, // SSL
+
+		{ lib:"heaps", f:"redistFiles/linux/libuv.so" },
+		{ lib:"heaps", f:"redistFiles/linux/libopenal.so" },
+		{ lib:"heaps", f:"openal.hdll" },
+		{ lib:"heaps", f:"ui.hdll" },
+		{ lib:"heaps", f:"uv.hdll" },
+
+		{ lib:"hlsdl", f:"sdl.hdll" },
+		{ lib:"hlsdl", f:"redistFiles/linux/libSDL2.so" },
 	];
 	static var SWF_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
 		{ lib:null, f:"redistFiles/flash/win_flashplayer_32_sa.exe", executableFormat:"flashPlayer.bin" },
@@ -480,7 +489,7 @@ class Main {
 		var paths = [];
 		var pathName;
 		var pathSeparator;
-		if (Sys.systemName() == "Windows") {
+		if( Sys.systemName() == "Windows" ){
 			pathName = "path";
 			pathSeparator = ";";
 			haxeTools = [ "haxe.exe", "hl.exe", "neko.exe" ];
@@ -546,7 +555,7 @@ class Main {
 			// avoid deleting unexpected files
 			directoryContainsOnly(
 				d,
-				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat"],
+				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat","so","sh"],
 				allExtraFiles
 			);
 			dn.FileTools.deleteDirectoryRec(d);
