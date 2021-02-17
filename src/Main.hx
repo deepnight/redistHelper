@@ -480,18 +480,18 @@ class Main {
 		var paths = [];
 		var pathName;
 		var pathSeparator;
-		trace(Sys.systemName());
+		Lib.println(Sys.systemName());
 		if (Sys.systemName() == "Windows") {
-            pathName = "path";
-            pathSeparator = ";";
+			pathName = "path";
+			pathSeparator = ";";
 			haxeTools = ["haxe.exe", "hl.exe", "neko.exe" ];
-        }
-        else {
-            pathName = "PATH";
-            pathSeparator = ":";
+		}
+		else {
+			pathName = "PATH";
+			pathSeparator = ":";
 			haxeTools = [ "haxe", "hl", "haxelib" ]
-        }
-		trace(Sys.getEnv(pathName));
+		}
+		Lib.println(Sys.getEnv(pathName));
 		for(path in Sys.getEnv(pathName).split(pathSeparator)) {
 			path = cleanUpDirPath(path);
 			for(f in haxeTools)
