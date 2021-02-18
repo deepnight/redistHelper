@@ -1,6 +1,9 @@
 #!/bin/bash
-# On Windows, hl.exe will use hlboot.dat automatically if not provided any argument
-# Doesn't appear to work on Linux but a simple script can do it
+# One problem with laucnhing the hl executable without arguments (so it defaults to hlboot.dat)
+# is that it doesn't work if it is launched from another directory
+# This is hardly a problem in Windows since most apps are laucnhed by double-clicking on them
+# (so the working directory is the one where the executable is) but in Linux it is very common
+# to launch apps from another directory. Execute this script instead so there's no problems
 # As a bonus the script itself will give executable permissions to the executable
 # (However there doesn't appear to be any way to ensure this script itself is executable,
 # so the user will have to make this script executable before being able to use it)
@@ -14,4 +17,4 @@ if test ! -x $SCRIPTNAME
 then
   chmod +x $SCRIPTNAME
 fi
-./$SCRIPTNAME hlboot.dat
+./$SCRIPTNAME
