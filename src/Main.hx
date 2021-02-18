@@ -32,25 +32,25 @@ class Main {
 		{ lib:null, f:"zlib.ndll" },
 	];
 	static var HL_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
-		{ lib:null, f:"hl.exe", executableFormat:"$.exe" },
-		{ lib:null, f:"libhl.dll" },
-		{ lib:null, f:"msvcr120.dll" },
-		{ lib:null, f:"fmt.hdll" },
-		{ lib:null, f:"ssl.hdll" },
+		{ lib:null, f:"redistFiles/win/hl.exe", executableFormat:"$.exe" },
+		{ lib:null, f:"redistFiles/win/libhl.dll" },
+		{ lib:null, f:"redistFiles/win/msvcr120.dll" },
+		{ lib:null, f:"redistFiles/win/fmt.hdll" },
+		{ lib:null, f:"redistFiles/win/ssl.hdll" },
 
-		{ lib:"heaps", f:"OpenAL32.dll" },
-		{ lib:"heaps", f:"openal.hdll" },
-		{ lib:"heaps", f:"ui.hdll" },
-		{ lib:"heaps", f:"uv.hdll" },
+		{ lib:"heaps", f:"redistFiles/win/OpenAL32.dll" },
+		{ lib:"heaps", f:"redistFiles/win/openal.hdll" },
+		{ lib:"heaps", f:"redistFiles/win/ui.hdll" },
+		{ lib:"heaps", f:"redistFiles/win/uv.hdll" },
 
-		{ lib:"hlsdl", f:"SDL2.dll" },
-		{ lib:"hlsdl", f:"sdl.hdll" },
+		{ lib:"hlsdl", f:"redistFiles/win/SDL2.dll" },
+		{ lib:"hlsdl", f:"redistFiles/win/sdl.hdll" },
 
-		{ lib:"hlsteam", f:"steam.hdll" },
-		{ lib:"hlsteam", f:"steam_api.dll" },
+		{ lib:"hlsteam", f:"redistFiles/win/steam.hdll" },
+		{ lib:"hlsteam", f:"redistFiles/win/steam_api.dll" },
 
-		{ lib:"hldx", f:"directx.hdll" },
-		{ lib:"hldx", f:"d3dcompiler_47.dll" },
+		{ lib:"hldx", f:"redistFiles/win/directx.hdll" },
+		{ lib:"hldx", f:"redistFiles/win/d3dcompiler_47.dll" },
 	];
 	static var HL_RUNTIME_FILES_MAC : Array<RuntimeFile> = [
 		{ lib:null, f:"redistFiles/mac/hl", executableFormat:"$" },
@@ -70,21 +70,21 @@ class Main {
 		{ lib:null, f:"redistFiles/linux/libhl.so" },
 		{ lib:null, f:"redistFiles/linux/hl.sh", executableFormat:"$.sh" },
 
-		{ lib:null, f:"fmt.hdll" },
+		{ lib:null, f:"redistFiles/linux/fmt.hdll" },
 		{ lib:null, f:"redistFiles/linux/libpng16.so" }, // fmt
 		{ lib:null, f:"redistFiles/linux/libvorbis.so" }, // fmt
 		{ lib:null, f:"redistFiles/linux/libvorbisfile.so" }, // fmt
 
-		{ lib:null, f:"ssl.hdll" },
+		{ lib:null, f:"redistFiles/linux/ssl.hdll" },
 		{ lib:null, f:"redistFiles/linux/libmbedtls.so" }, // SSL
 
 		{ lib:"heaps", f:"redistFiles/linux/libuv.so" },
 		{ lib:"heaps", f:"redistFiles/linux/libopenal.so" },
-		{ lib:"heaps", f:"openal.hdll" },
-		{ lib:"heaps", f:"ui.hdll" },
-		{ lib:"heaps", f:"uv.hdll" },
+		{ lib:"heaps", f:"redistFiles/linux/openal.hdll" },
+		{ lib:"heaps", f:"redistFiles/linux/ui.hdll" },
+		{ lib:"heaps", f:"redistFiles/linux/uv.hdll" },
 
-		{ lib:"hlsdl", f:"sdl.hdll" },
+		{ lib:"hlsdl", f:"redistFiles/linux/sdl.hdll" },
 		{ lib:"hlsdl", f:"redistFiles/linux/libSDL2.so" },
 	];
 	static var SWF_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
