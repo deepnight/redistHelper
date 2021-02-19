@@ -503,12 +503,11 @@ class Main {
 		}
 		for(path in Sys.getEnv(pathName).split(pathSeparator)) {
 			path = cleanUpDirPath(path);
-			for(f in haxeTools) {
+			for(f in haxeTools)
 				if( sys.FileSystem.exists(path+f) ) {
 					paths.push(path);
 					break;
 				}
-			}
 		}
 
 		if( useHl32bits ) {
@@ -521,9 +520,8 @@ class Main {
 			throw "Haxe tools not found ("+haxeTools.join(", ")+") in PATH!";
 
 		for(path in paths)
-			for (f in haxeTools)
-				if( sys.FileSystem.exists(path+f) )
-					return path+f;
+			if( sys.FileSystem.exists(path+f) )
+				return path+f;
 
 		throw "File not found: "+f+", lookup paths="+paths.join(", ");
 	}

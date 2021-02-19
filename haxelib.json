@@ -1,13 +1,13 @@
 {
   "name": "redistHelper",
-  "url" : "https://github.com/yvanoff/haxeRedist",
+  "url" : "https://github.com/deepnight/haxeRedist",
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
   "version": "0.4.8",
   "classPath": "src/",
   "releasenote": "Added FlashPlayer projector packaging (Windows only)",
-  "contributors": ["sbenard","yvanoff"],
+  "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
   }
