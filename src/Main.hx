@@ -66,26 +66,28 @@ class Main {
 		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
 	];
 	static var HL_RUNTIME_FILES_LINUX : Array<RuntimeFile> = [
-		{ lib:null, f:"redistFiles/linux/hl", executableFormat:"$" },
 		{ lib:null, f:"redistFiles/linux/libhl.so" },
 		{ lib:null, f:"redistFiles/linux/hl.sh", executableFormat:"$.sh" },
 
+		{ lib:null, f:"redistFiles/linux/libpng16.so.16" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libturbojpeg.so.0" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libvorbis.so.0" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libvorbisfile.so.3" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libogg.so.0" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libmbedtls.so.13" }, // SSL
+		{ lib:null, f:"redistFiles/linux/libmbedcrypto.so.6" }, // SSL
+		{ lib:null, f:"redistFiles/linux/libmbedx509.so.1" }, // SSL
+		{ lib:"heaps", f:"redistFiles/linux/libuv.so.1" },
+		{ lib:"heaps", f:"redistFiles/linux/libopenal.so.1" },
+		{ lib:"hlsdl", f:"redistFiles/linux/libSDL2-2.0.so.0" },
+
+		{ lib:null, f:"redistFiles/linux/hl", executableFormat:"$" },
 		{ lib:null, f:"redistFiles/linux/fmt.hdll" },
-		{ lib:null, f:"redistFiles/linux/libpng16.so" }, // fmt
-		{ lib:null, f:"redistFiles/linux/libvorbis.so" }, // fmt
-		{ lib:null, f:"redistFiles/linux/libvorbisfile.so" }, // fmt
-
 		{ lib:null, f:"redistFiles/linux/ssl.hdll" },
-		{ lib:null, f:"redistFiles/linux/libmbedtls.so" }, // SSL
-
-		{ lib:"heaps", f:"redistFiles/linux/libuv.so" },
-		{ lib:"heaps", f:"redistFiles/linux/libopenal.so" },
 		{ lib:"heaps", f:"redistFiles/linux/openal.hdll" },
 		{ lib:"heaps", f:"redistFiles/linux/ui.hdll" },
 		{ lib:"heaps", f:"redistFiles/linux/uv.hdll" },
-
 		{ lib:"hlsdl", f:"redistFiles/linux/sdl.hdll" },
-		{ lib:"hlsdl", f:"redistFiles/linux/libSDL2.so" },
 	];
 	static var SWF_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
 		{ lib:null, f:"redistFiles/flash/win_flashplayer_32_sa.exe", executableFormat:"flashPlayer.bin" },

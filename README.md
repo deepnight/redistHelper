@@ -1,8 +1,10 @@
 # About
 
-A small script to quickly create redistribuable of an existing simple HL/JS/SWF haxe project.
+A small mutlip-platform script (tested on Windows and Linux, Mac requires testing) to quickly create redistribuable of an existing simple HL/JS/SWF haxe project.
 
 It will copy all the required files in a specified folder ("redist" by default), so you just have to distribute this folder content. Especially useful to package a HashLink (HL) project.
+
+Now supports Linux targets.
 
 # Install
 
