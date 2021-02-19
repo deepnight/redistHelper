@@ -31,27 +31,26 @@ class Main {
 		{ lib:null, f:"ui.ndll" },
 		{ lib:null, f:"zlib.ndll" },
 	];
-
 	static var HL_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
-		{ lib:null, f:"hl.exe", executableFormat:"$.exe" },
-		{ lib:null, f:"libhl.dll" },
-		{ lib:null, f:"msvcr120.dll" },
-		{ lib:null, f:"fmt.hdll" },
-		{ lib:null, f:"ssl.hdll" },
+		{ lib:null, f:"redistFiles/win/hl.exe", executableFormat:"$.exe" },
+		{ lib:null, f:"redistFiles/win/libhl.dll" },
+		{ lib:null, f:"redistFiles/win/msvcr120.dll" },
+		{ lib:null, f:"redistFiles/win/fmt.hdll" },
+		{ lib:null, f:"redistFiles/win/ssl.hdll" },
 
-		{ lib:"heaps", f:"OpenAL32.dll" },
-		{ lib:"heaps", f:"openal.hdll" },
-		{ lib:"heaps", f:"ui.hdll" },
-		{ lib:"heaps", f:"uv.hdll" },
+		{ lib:"heaps", f:"redistFiles/win/OpenAL32.dll" },
+		{ lib:"heaps", f:"redistFiles/win/openal.hdll" },
+		{ lib:"heaps", f:"redistFiles/win/ui.hdll" },
+		{ lib:"heaps", f:"redistFiles/win/uv.hdll" },
 
-		{ lib:"hlsdl", f:"SDL2.dll" },
-		{ lib:"hlsdl", f:"sdl.hdll" },
+		{ lib:"hlsdl", f:"redistFiles/win/SDL2.dll" },
+		{ lib:"hlsdl", f:"redistFiles/win/sdl.hdll" },
 
-		{ lib:"hlsteam", f:"steam.hdll" },
-		{ lib:"hlsteam", f:"steam_api.dll" },
+		{ lib:"hlsteam", f:"redistFiles/win/steam.hdll" },
+		{ lib:"hlsteam", f:"redistFiles/win/steam_api.dll" },
 
-		{ lib:"hldx", f:"directx.hdll" },
-		{ lib:"hldx", f:"d3dcompiler_47.dll" },
+		{ lib:"hldx", f:"redistFiles/win/directx.hdll" },
+		{ lib:"hldx", f:"redistFiles/win/d3dcompiler_47.dll" },
 	];
 	static var HL_RUNTIME_FILES_MAC : Array<RuntimeFile> = [
 		{ lib:null, f:"redistFiles/mac/hl", executableFormat:"$" },
@@ -66,7 +65,30 @@ class Main {
 
 		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
 	];
+	static var HL_RUNTIME_FILES_LINUX : Array<RuntimeFile> = [
+		{ lib:null, f:"redistFiles/linux/libhl.so" },
+		{ lib:null, f:"redistFiles/linux/hl.sh", executableFormat:"$.sh" },
 
+		{ lib:null, f:"redistFiles/linux/libpng16.so.16" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libturbojpeg.so.0" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libvorbis.so.0" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libvorbisfile.so.3" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libogg.so.0" }, // fmt
+		{ lib:null, f:"redistFiles/linux/libmbedtls.so.13" }, // SSL
+		{ lib:null, f:"redistFiles/linux/libmbedcrypto.so.6" }, // SSL
+		{ lib:null, f:"redistFiles/linux/libmbedx509.so.1" }, // SSL
+		{ lib:"heaps", f:"redistFiles/linux/libuv.so.1" },
+		{ lib:"heaps", f:"redistFiles/linux/libopenal.so.1" },
+		{ lib:"hlsdl", f:"redistFiles/linux/libSDL2-2.0.so.0" },
+
+		{ lib:null, f:"redistFiles/linux/hl", executableFormat:"$" },
+		{ lib:null, f:"redistFiles/linux/fmt.hdll" },
+		{ lib:null, f:"redistFiles/linux/ssl.hdll" },
+		{ lib:"heaps", f:"redistFiles/linux/openal.hdll" },
+		{ lib:"heaps", f:"redistFiles/linux/ui.hdll" },
+		{ lib:"heaps", f:"redistFiles/linux/uv.hdll" },
+		{ lib:"hlsdl", f:"redistFiles/linux/sdl.hdll" },
+	];
 	static var SWF_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
 		{ lib:null, f:"redistFiles/flash/win_flashplayer_32_sa.exe", executableFormat:"flashPlayer.bin" },
 	];
@@ -244,6 +266,11 @@ class Main {
 					makeHl(baseRedistDir+"/opengl_mac/"+projectName, HL_RUNTIME_FILES_MAC, false);
 					if( zipping )
 						zipFolder( '$baseRedistDir/${projectName}_opengl_mac.zip', baseRedistDir+"/opengl_mac/");
+
+					// SDL Linux
+					makeHl(baseRedistDir+"/opengl_linux/"+projectName, HL_RUNTIME_FILES_LINUX, false);
+					if( zipping )
+						zipFolder( '$baseRedistDir/${projectName}_opengl_linux.zip', baseRedistDir+"/opengl_linux/");
 				}
 				Sys.println("");
 			}
@@ -460,9 +487,21 @@ class Main {
 			return redistHelperDir+f;
 
 		// Locate haxe tools
-		var haxeTools = ["haxe.exe", "hl.exe", "neko.exe" ];
+		var haxeTools;
 		var paths = [];
-		for(path in Sys.getEnv("path").split(";")) {
+		var pathName;
+		var pathSeparator;
+		if( Sys.systemName() == "Windows" ){
+			pathName = "path";
+			pathSeparator = ";";
+			haxeTools = [ "haxe.exe", "hl.exe", "neko.exe" ];
+		}
+		else {
+			pathName = "PATH";
+			pathSeparator = ":";
+			haxeTools = [ "haxe", "hl", "haxelib" ];
+		}
+		for(path in Sys.getEnv(pathName).split(pathSeparator)) {
 			path = cleanUpDirPath(path);
 			for(f in haxeTools)
 				if( sys.FileSystem.exists(path+f) ) {
@@ -516,7 +555,7 @@ class Main {
 			// avoid deleting unexpected files
 			directoryContainsOnly(
 				d,
-				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat"],
+				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat","so","sh"],
 				allExtraFiles
 			);
 			dn.FileTools.deleteDirectoryRec(d);
