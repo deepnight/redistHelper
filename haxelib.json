@@ -4,11 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "classPath": "src/",
-  "releasenote": "Updated macOS HL binaries",
+  "releasenote": "Removed deepnightLibs dependency (broken haxelib dep system)",
   "contributors": ["sbenard"],
-  "dependencies": {
-    "deepnightLibs":""
-  }
+  "dependencies": {}
 }
