@@ -48,7 +48,7 @@ class Main {
 		{ lib:"hlsdl", f:"sdl.hdll" },
 
 		{ lib:"hlsteam", f:"steam.hdll" },
-		{ lib:"hlsteam", f:"steam_api.dll" },
+		{ lib:"hlsteam", f:"steam_api64.dll" },
 
 		{ lib:"hldx", f:"directx.hdll" },
 		{ lib:"hldx", f:"d3dcompiler_47.dll" },
