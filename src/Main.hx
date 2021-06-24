@@ -372,7 +372,7 @@ class Main {
 			if( f.isDir ) {
 				// Copy a directory structure
 				if( verbose )
-					Lib.println(" -> DIRECTORY: "+projectDir+f.source.full+" to "+targetPath);
+					Lib.println(" -> DIRECTORY: "+projectDir+f.source.full+"  =>  "+targetPath);
 				dn.FileTools.copyDirectoryRec(f.source.full, targetPath);
 
 				// Rename
@@ -390,7 +390,7 @@ class Main {
 				if( f.rename!=null )
 					to = f.rename;
 				if( verbose )
-					Lib.println(" -> "+projectDir+f.source.full+" to "+targetPath+"/"+to);
+					Lib.println(" -> FILE: "+projectDir+f.source.full+"  =>  "+targetPath+"/"+to);
 				copy(projectDir+f.source.full, targetPath+"/"+to);
 			}
 		}
