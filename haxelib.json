@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "classPath": "src/",
-  "releasenote": "Fixed steam DLLs",
+  "releasenote": "Fixed extra dirs copy",
   "contributors": ["sbenard"],
   "dependencies": {}
 }
