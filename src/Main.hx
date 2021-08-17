@@ -2,7 +2,8 @@ import neko.Lib;
 
 typedef RuntimeFile = {
 	var lib: Null<String>;
-	var f: String;
+	var f: String; // defaults to 64bits version
+	var ?f32: String; // alternative 32bits version
 	var ?executableFormat: String;
 }
 
@@ -48,7 +49,7 @@ class Main {
 		{ lib:"hlsdl", f:"sdl.hdll" },
 
 		{ lib:"hlsteam", f:"steam.hdll" },
-		{ lib:"hlsteam", f:"steam_api64.dll" },
+		{ lib:"hlsteam", f:"steam_api64.dll", f32:"steam_api.dll" },
 
 		{ lib:"hldx", f:"directx.hdll" },
 		{ lib:"hldx", f:"d3dcompiler_47.dll" },
@@ -350,10 +351,11 @@ class Main {
 			Lib.println("Copying "+targetName+" runtime files to "+targetDir+"... ");
 		for( r in runTimeFiles ) {
 			if( r.lib==null || hxmlRequiresLib(hxmlPath, r.lib) ) {
-				var from = findFile(r.f, useHl32bits);
+				var fileName = useHl32bits && r.f32!=null ? r.f32 : r.f;
+				var from = findFile(fileName, useHl32bits);
 				if( verbose )
-					Lib.println(" -> "+r.f + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
-				var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : r.f.indexOf("/")<0 ? r.f : r.f.substr(r.f.lastIndexOf("/")+1);
+					Lib.println(" -> "+fileName + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
+				var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : fileName.indexOf("/")<0 ? fileName : fileName.substr(fileName.lastIndexOf("/")+1);
 				var to = targetDir+"/"+toFile;
 				if( r.executableFormat!=null && verbose )
 					Lib.println(" -> Renamed executable to "+toFile);
