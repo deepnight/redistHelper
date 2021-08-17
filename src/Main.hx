@@ -349,6 +349,8 @@ class Main {
 	static function copyRuntimeFiles(hxmlPath:String, targetName:String, targetDir:String, runTimeFiles:Array<RuntimeFile>, useHl32bits:Bool) {
 		if( verbose )
 			Lib.println("Copying "+targetName+" runtime files to "+targetDir+"... ");
+
+		var exes = [];
 		for( r in runTimeFiles ) {
 			if( r.lib==null || hxmlRequiresLib(hxmlPath, r.lib) ) {
 				var fileName = useHl32bits && r.f32!=null ? r.f32 : r.f;
@@ -360,8 +362,32 @@ class Main {
 				if( r.executableFormat!=null && verbose )
 					Lib.println(" -> Renamed executable to "+toFile);
 				copy(from, to);
+
+				// List executables
+				if( r.executableFormat!=null )
+					exes.push(toFile);
 			}
 		}
+
+		// Set EXEs icon
+		if( hasParameter("-icon") )
+			for( exe in exes ) {
+				var i = getParameter("-icon");
+				var fp = dn.FilePath.fromFile('$projectDir/$targetDir/$exe');
+				fp.useSlashes();
+				Lib.println("Replacing EXE icon...");
+				runTool('rcedit/rcedit.exe', ['${fp.full}', '--set-icon $i']);
+			}
+	}
+
+
+	static function runTool(path:String, args:Array<String>) : Int {
+		path = '$redistHelperDir/tools/$path';
+		var cmd = path + " " + args.join(" ");
+		if( verbose )
+			Lib.println("Executing tool: "+path);
+
+		return Sys.command(cmd);
 	}
 
 	static function copyExtraFilesIn(extraFiles:Array<ExtraCopiedFile>, targetPath:String) {
