@@ -37,6 +37,7 @@ class Main {
 		{ lib:null, f:"hl.exe", executableFormat:"$.exe" },
 		{ lib:null, f:"libhl.dll" },
 		{ lib:null, f:"msvcr120.dll" },
+		{ lib:null, f:"msvcp120.dll" },
 		{ lib:null, f:"fmt.hdll" },
 		{ lib:null, f:"ssl.hdll" },
 
