@@ -741,6 +741,7 @@ class Main {
 		Lib.println("OPTIONS:");
 		Lib.println("  -o <outputDir>: change the default redistHelper output dir (default: \"redist/\")");
 		Lib.println("  -p <projectName>: change the default project name (if not provided, it will use the name of the parent folder where this script is called)");
+		Lib.println("  -icon <iconFilePath>: replace EXE icon (only works for Windows and HL target)");
 		Lib.println("  -hl32: when building Hashlink targets, this option will also package a 32bits version of the HL runtime in separate redist folders.");
 		Lib.println("  -zip: create a zip file for each build");
 		Lib.println("  -h: show this help");
