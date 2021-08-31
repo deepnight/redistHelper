@@ -787,6 +787,7 @@ class Main {
 		Lib.println("  -icon <iconFilePath>: replace EXE icon (only works for Windows and HL target)");
 		Lib.println("  -hl32: when building Hashlink targets, this option will also package a 32bits version of the HL runtime in separate redist folders.");
 		Lib.println("  -zip: create a zip file for each build");
+		Lib.println("  -pak: generate a PAK file from the existing Heaps resource folder");
 		Lib.println("  -h: show this help");
 		Lib.println("  -v: verbose mode (display more informations)");
 		Lib.println("");
