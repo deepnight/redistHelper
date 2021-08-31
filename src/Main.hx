@@ -69,11 +69,15 @@ class Main {
 		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
 	];
 
+	static var PAK_BUILDER_BIN = "pakBuilder.hl";
+	static var PAK_BUILDER_OUT = "redistTmp";
+
 	static var SWF_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
 		{ lib:null, f:"redistFiles/flash/win_flashplayer_32_sa.exe", executableFormat:"flashPlayer.bin" },
 	];
 	static var SINGLE_PARAMETERS = [
 		"-zip" => true,
+		"-pak" => true,
 		"-h" => true,
 		"--help" => true,
 		"-z" => true,
@@ -334,7 +338,19 @@ class Main {
 			}
 		}
 
+		cleanUpExit();
 		Lib.println("Done.");
+		Sys.exit(0);
+	}
+
+	static function cleanUpExit() {
+		Lib.println("Cleaning up...");
+
+		if( sys.FileSystem.exists(PAK_BUILDER_BIN) )
+			sys.FileSystem.deleteFile(PAK_BUILDER_BIN);
+
+		if( hasParameter("-pak") && sys.FileSystem.exists(PAK_BUILDER_OUT+".pak") )
+			sys.FileSystem.deleteFile(PAK_BUILDER_OUT+".pak");
 	}
 
 	static function createTextFile(path:String, content:String) {
@@ -342,9 +358,24 @@ class Main {
 	}
 
 	static function compile(hxmlPath:String) {
-		var code = Sys.command("haxe", [hxmlPath]);
-		if( code!=0 )
-			error('Compilation failed (error code $code)');
+		// Compile
+		if( Sys.command("haxe", [hxmlPath]) != 0 )
+			error('Compilation failed!');
+
+		// PAK
+		if( hasParameter("-pak") ) {
+			// Compile PAK builder
+			if( !sys.FileSystem.exists(PAK_BUILDER_BIN) ) {
+				Lib.println("Compiling PAK builder ("+Sys.getCwd()+")...");
+				if( Sys.command("haxe -hl "+PAK_BUILDER_BIN+" -lib heaps -main hxd.fmt.pak.Build") != 0 )
+					error("Could not compile PAK builder!");
+			}
+			// Run it
+			Lib.println("Creating PAK...");
+			if( Sys.command("hl "+PAK_BUILDER_BIN+" -out "+PAK_BUILDER_OUT)!=0 ) {
+				error("Failed to run HL to build PAK!");
+			}
+		}
 	}
 
 	static function copyRuntimeFiles(hxmlPath:String, targetName:String, targetDir:String, runTimeFiles:Array<RuntimeFile>, useHl32bits:Bool) {
@@ -370,6 +401,10 @@ class Main {
 			}
 		}
 
+		// Copy PAK
+		if( hasParameter("-pak") )
+			copy(PAK_BUILDER_OUT+".pak", targetDir+"/res.pak");
+
 		// Set EXEs icon
 		if( hasParameter("-icon") )
 			for( exe in exes ) {
@@ -377,7 +412,15 @@ class Main {
 				var fp = dn.FilePath.fromFile('$projectDir/$targetDir/$exe');
 				fp.useSlashes();
 				Lib.println("Replacing EXE icon...");
-				runTool('rcedit/rcedit.exe', ['${fp.full}', '--set-icon $i']);
+				if( !sys.FileSystem.exists(StringTools.replace(i,'"','')) )
+					error("Icon file not found: "+i);
+
+				if( verbose ) {
+					Lib.println("  exe="+fp.full);
+					Lib.println("  icon="+i);
+				}
+				if( runTool('rcedit/rcedit.exe', ['${fp.full}', '--set-icon $i']) != 0 )
+					error("rcedit failed!");
 			}
 	}
 
@@ -545,7 +588,7 @@ class Main {
 			// avoid deleting unexpected files
 			directoryContainsOnly(
 				d,
-				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat"],
+				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat","pak"],
 				allExtraFiles
 			);
 			dn.FileTools.deleteDirectoryRec(d);
@@ -760,6 +803,7 @@ class Main {
 	static function error(msg:Dynamic) {
 		Lib.println("");
 		Lib.println("ERROR - "+Std.string(msg));
+		cleanUpExit();
 		Sys.exit(1);
 	}
 }
