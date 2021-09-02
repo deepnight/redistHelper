@@ -427,7 +427,7 @@ class Main {
 
 	static function runTool(path:String, args:Array<String>) : Int {
 		path = '$redistHelperDir/tools/$path';
-		var cmd = path + " " + args.join(" ");
+		var cmd = "\"" + path + "\" " + args.join(" ");
 		if( verbose )
 			Lib.println("Executing tool: "+path);
 
