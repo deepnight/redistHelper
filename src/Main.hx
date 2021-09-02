@@ -406,7 +406,7 @@ class Main {
 			copy(PAK_BUILDER_OUT+".pak", targetDir+"/res.pak");
 
 		// Set EXEs icon
-		if( hasParameter("-icon") )
+		if( hasParameter("-icon") && targetDir.indexOf("mac") == -1 ) // but not for mac builds
 			for( exe in exes ) {
 				var i = getParameter("-icon");
 				var fp = dn.FilePath.fromFile('$projectDir/$targetDir/$exe');
@@ -427,7 +427,7 @@ class Main {
 
 	static function runTool(path:String, args:Array<String>) : Int {
 		path = '$redistHelperDir/tools/$path';
-		var cmd = path + " " + args.join(" ");
+		var cmd = "\"" + path + "\" " + args.join(" ");
 		if( verbose )
 			Lib.println("Executing tool: "+path);
 
