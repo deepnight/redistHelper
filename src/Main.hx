@@ -411,29 +411,43 @@ class Main {
 		if( hasParameter("-icon") && targetDir.indexOf("mac") == -1 ) // but not for mac builds
 			for( exe in exes ) {
 				var i = getParameter("-icon");
-				var fp = FilePath.fromFile('$projectDir/$targetDir/$exe');
-				fp.useSlashes();
+				if( i==null )
+					error("Missing icon path");
+
+				var iconFp = FilePath.fromFile( StringTools.replace( i, "\"", "") );
+				var exeFp = FilePath.fromFile('$targetDir/$exe');
+
+				iconFp.useSlashes();
+				exeFp.useSlashes();
+
 				Lib.println("Replacing EXE icon...");
-				if( !sys.FileSystem.exists(StringTools.replace(i,'"','')) )
-					error("Icon file not found: "+i);
+				if( !sys.FileSystem.exists(iconFp.full) )
+					error("Icon file not found: "+iconFp.full);
 
 				if( verbose ) {
-					Lib.println("  exe="+fp.full);
-					Lib.println("  icon="+i);
+					Lib.println("  exe="+exeFp.full);
+					Lib.println("  icon="+iconFp.full);
 				}
-				if( runTool('rcedit/rcedit.exe', ['${fp.full}', '--set-icon $i']) != 0 )
+				if( runTool('rcedit/rcedit.exe', ['"${exeFp.full}"', '--set-icon "${iconFp.full}" ']) != 0 )
 					error("rcedit failed!");
 			}
 	}
 
 
 	static function runTool(path:String, args:Array<String>) : Int {
-		path = '$redistHelperDir/tools/$path';
-		var cmd = "\"" + path + "\" " + args.join(" ");
+		var toolFp = FilePath.fromFile('$redistHelperDir/tools/$path');
+		toolFp.useSlashes();
+		var cmd = '"${toolFp.full}" ${args.join(" ")}';
 		if( verbose )
-			Lib.println("Executing tool: "+path);
+			Lib.println("Executing tool: "+cmd);
 
-		return Sys.command(cmd);
+		// Use sys.io.Process instead of Sys.command because of quotes ("") bug
+		var p = new sys.io.Process(cmd);
+		var code = p.exitCode();
+		p.close();
+		if( verbose && code!=0 )
+			Lib.println('  Failed with error code $code');
+		return code;
 	}
 
 	static function copyExtraFilesIn(extraFiles:Array<ExtraCopiedFile>, targetPath:String) {
