@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "classPath": "src/",
-  "releasenote": "Removed Neko dependency",
+  "releasenote": "Removed Neko dependency. Fixed rcedit error.",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
