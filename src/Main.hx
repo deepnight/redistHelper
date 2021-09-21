@@ -1,4 +1,6 @@
-import neko.Lib;
+import dn.Lib;
+import dn.FilePath;
+import dn.FileTools;
 
 typedef RuntimeFile = {
 	var lib: Null<String>;
@@ -8,7 +10,7 @@ typedef RuntimeFile = {
 }
 
 typedef ExtraCopiedFile = {
-	var source : dn.FilePath;
+	var source : FilePath;
 	var isDir : Bool;
 	var rename: Null<String>;
 }
@@ -101,7 +103,7 @@ class Main {
 
 			Lib.println(Std.string(m));
 		}
-		dn.FilePath.SLASH_MODE = OnlySlashes;
+		FilePath.SLASH_MODE = OnlySlashes;
 
 		if( Sys.args().length==0 )
 			usage();
@@ -141,7 +143,7 @@ class Main {
 					error("File not found: "+path);
 
 				var isDir = sys.FileSystem.isDirectory(path);
-				var originalFile = isDir ? dn.FilePath.fromDir(path) : dn.FilePath.fromFile(path);
+				var originalFile = isDir ? FilePath.fromDir(path) : FilePath.fromFile(path);
 				if( renameParts.length==1 )
 					extraFiles.push({ source:originalFile, rename:null, isDir:isDir });
 				else
@@ -295,7 +297,7 @@ class Main {
 				compile(hxml);
 
 				Lib.println("Creating executable...");
-				var out = dn.FilePath.fromFile( getHxmlOutput(hxml,"-neko") );
+				var out = FilePath.fromFile( getHxmlOutput(hxml,"-neko") );
 				Sys.command("nekotools", ["boot",out.full]);
 				out.extension = "exe";
 
@@ -409,7 +411,7 @@ class Main {
 		if( hasParameter("-icon") && targetDir.indexOf("mac") == -1 ) // but not for mac builds
 			for( exe in exes ) {
 				var i = getParameter("-icon");
-				var fp = dn.FilePath.fromFile('$projectDir/$targetDir/$exe');
+				var fp = FilePath.fromFile('$projectDir/$targetDir/$exe');
 				fp.useSlashes();
 				Lib.println("Replacing EXE icon...");
 				if( !sys.FileSystem.exists(StringTools.replace(i,'"','')) )
@@ -445,7 +447,7 @@ class Main {
 				// Copy a directory structure
 				if( verbose )
 					Lib.println(" -> DIRECTORY: "+projectDir+f.source.full+"  =>  "+targetPath);
-				dn.FileTools.copyDirectoryRec(f.source.full, targetPath);
+				FileTools.copyDirectoryRec(f.source.full, targetPath);
 
 				// Rename
 				if( f.rename!=null ) {
@@ -560,7 +562,7 @@ class Main {
 	}
 
 	static function cleanUpDirPath(path:String) {
-		var fp = dn.FilePath.fromDir(path);
+		var fp = FilePath.fromDir(path);
 		fp.useSlashes();
 		return fp.directoryWithSlash;
 	}
@@ -575,9 +577,9 @@ class Main {
 				if( !f.isDir )
 					allExtraFiles.push(f.rename!=null ? f.rename : f.source.fileWithExt);
 				else {
-					var all = dn.FileTools.listAllFilesRec(f.source.full);
+					var all = FileTools.listAllFilesRec(f.source.full);
 					for(f in all.files)
-						allExtraFiles.push( dn.FilePath.extractFileWithExt(f) );
+						allExtraFiles.push( FilePath.extractFileWithExt(f) );
 				}
 
 
@@ -591,7 +593,7 @@ class Main {
 				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat","pak"],
 				allExtraFiles
 			);
-			dn.FileTools.deleteDirectoryRec(d);
+			FileTools.deleteDirectoryRec(d);
 			createDirectory(d);
 		}
 		catch(e:Dynamic) {

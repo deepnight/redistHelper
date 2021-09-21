@@ -1,5 +1,2 @@
-res/.tmp
-art/export
-redist
-bin/*.*
+bin/
 .vscode/settings.json

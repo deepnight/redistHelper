@@ -1,0 +1,7 @@
+-cp src
+-lib deepnightLibs
+
+-dce full
+-main Main
+
+-hl bin/redistHelper.hl

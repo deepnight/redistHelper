@@ -4,9 +4,12 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.4.15",
+  "version": "0.5.0",
   "classPath": "src/",
-  "releasenote": "Added Heaps PAK support",
+  "releasenote": "Removed Neko dependency",
   "contributors": ["sbenard"],
-  "dependencies": {}
+  "dependencies": {
+    "deepnightLibs":""
+  },
+  "main": "Main"
 }

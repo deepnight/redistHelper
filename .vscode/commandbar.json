@@ -4,10 +4,10 @@
     "skipErrorMessage": true,
     "commands": [
       {
-        "text": "✪ Build Neko",
+        "text": "✪ HL",
         "color": "orange",
         "commandType":"palette",
-        "command": "workbench.action.tasks.runTask|Neko",
+        "command": "workbench.action.tasks.runTask|HL",
         "alignment": "right",
         "skipTerminateQuickPick": false,
         "priority": 5

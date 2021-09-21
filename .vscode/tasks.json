@@ -4,9 +4,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Neko",
+            "label": "HL",
             "type": "hxml",
-            "file": "redist.hxml",
+            "file": "build.hxml",
             "presentation": {
                 "reveal": "never",
                 "panel": "dedicated",
