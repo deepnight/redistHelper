@@ -359,7 +359,7 @@ class Main {
 
 		var fp = FilePath.fromFile(exePath);
 		if( fp.extension!="exe" ) {
-			print("  Warning: only supported on Windows executables");
+			Lib.println("  Warning: only supported on Windows executables");
 			return false;
 		}
 
