@@ -4,7 +4,7 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "classPath": "src/",
   "releasenote": "Added Windows code signing using PFX certificates. See -sign arg in help.",
   "contributors": ["sbenard"],
