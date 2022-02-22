@@ -108,6 +108,8 @@ class Main {
 		if( Sys.args().length==0 )
 			usage();
 
+		Sys.println("");
+
 		// Misc parameters
 		if( hasParameter("-h") || hasParameter("--help") )
 			usage();
@@ -178,7 +180,6 @@ class Main {
 			projectName = split[split.length-2];
 		}
 		Lib.println("Project name: "+projectName);
-		Sys.println("");
 
 		// Output folder
 		var baseRedistDir = getParameter("-o");
@@ -253,7 +254,6 @@ class Main {
 					if( zipping )
 						zipFolder( '$baseRedistDir/${projectName}_opengl_mac.zip', baseRedistDir+"/opengl_mac/");
 				}
-				Sys.println("");
 			}
 
 			// JS
@@ -284,8 +284,6 @@ class Main {
 				copyExtraFilesIn(extraFiles, jsDir);
 				if( zipping )
 					zipFolder( baseRedistDir+"/js.zip", jsDir);
-
-				Lib.println("");
 			}
 
 			// Neko
@@ -303,14 +301,14 @@ class Main {
 
 				Lib.println("Packaging "+nekoDir+"...");
 				copy(out.full, nekoDir+"/"+projectName+".exe");
+				if( hasParameter("-sign") )
+					signExecutable(nekoDir+"/"+projectName+".exe");
 
 				copyRuntimeFiles(hxml, "Neko", nekoDir, NEKO_RUNTIME_FILES_WIN, false);
 
 				copyExtraFilesIn(extraFiles, nekoDir);
 				if( zipping )
 					zipFolder( baseRedistDir+"/neko.zip", nekoDir);
-
-				Lib.println("");
 			}
 
 			// SWF
@@ -335,14 +333,52 @@ class Main {
 				copyExtraFilesIn(extraFiles, swfDir);
 				if( zipping )
 					zipFolder( baseRedistDir+"/swf.zip", swfDir);
-
-				Lib.println("");
 			}
 		}
 
 		cleanUpExit();
 		Lib.println("Done.");
 		Sys.exit(0);
+	}
+
+	static function checkExeInPath(exe:String) {
+		var p = new sys.io.Process("where /q "+exe);
+		if( p.exitCode()==0 )
+			return true;
+		else
+			return false;
+	}
+
+
+	static function signExecutable(exePath:String) {
+		Lib.println("Code signing executable...");
+
+		// Check EXE
+		if( !sys.FileSystem.exists(exePath) )
+			error("Cannot sign executable, file not found: "+exePath);
+
+		// Check if MS SignTool is installed
+		if( !checkExeInPath("signtool.exe") )
+			error('You need "signtool.exe" in PATH. You can get it by installing Microsoft Windows SDK (only pick "signing tools").');
+
+		// Get PFX path from either argument or env "CSC_LINK"
+		var pfx = getParameter("-sign");
+		if( pfx==null || pfx=="" )
+			pfx = Sys.getEnv("CSC_LINK");
+		if( pfx==null || !sys.FileSystem.exists(pfx) )
+			error("Certificate file (.pfx) is missing after -sign argument.");
+
+		Lib.println('  Using certificate: $pfx');
+
+		// Get password for env "CSC_KEY_PASSWORD" or by asking the user for it
+		var pass = Sys.getEnv("CSC_KEY_PASSWORD");
+		if( pass==null ) {
+			Sys.print("Enter PFX password: ");
+			pass = Sys.stdin().readLine();
+		}
+		var result = Sys.command('signtool.exe sign /f "$pfx" /fd SHA256 /t http://timestamp.digicert.com /p "$pass" $exePath');
+		if( result!=0 )
+			error('Code signing failed! (code $result)');
 	}
 
 	static function cleanUpExit() {
@@ -399,7 +435,7 @@ class Main {
 
 				// List executables
 				if( r.executableFormat!=null )
-					exes.push(toFile);
+					exes.push( FilePath.fromFile(targetDir+"/"+toFile) );
 			}
 		}
 
@@ -409,13 +445,12 @@ class Main {
 
 		// Set EXEs icon
 		if( hasParameter("-icon") && targetDir.indexOf("mac") == -1 ) // but not for mac builds
-			for( exe in exes ) {
+			for( exeFp in exes ) {
 				var i = getParameter("-icon");
 				if( i==null )
 					error("Missing icon path");
 
 				var iconFp = FilePath.fromFile( StringTools.replace( i, "\"", "") );
-				var exeFp = FilePath.fromFile('$targetDir/$exe');
 
 				iconFp.useSlashes();
 				exeFp.useSlashes();
@@ -431,6 +466,11 @@ class Main {
 				if( runTool('rcedit/rcedit.exe', ['"${exeFp.full}"', '--set-icon "${iconFp.full}" ']) != 0 )
 					error("rcedit failed!");
 			}
+
+		// Sign exe
+		if( hasParameter("-sign") && exes.length>0 )
+			for( fp in exes )
+				signExecutable(fp.full);
 	}
 
 
@@ -804,6 +844,7 @@ class Main {
 		Lib.println("  -hl32: when building Hashlink targets, this option will also package a 32bits version of the HL runtime in separate redist folders.");
 		Lib.println("  -zip: create a zip file for each build");
 		Lib.println("  -pak: generate a PAK file from the existing Heaps resource folder");
+		Lib.println("  -sign <pfxFile>: code sign the executables using the provided PFX certificate. A password will be requested to use the certificate. If the pfxFile argument is empty (eg. \"\"), the PFX path will be obtained from the environment var CSC_LINK. The password can also obtained from the environment var CSC_KEY_PASSWORD.");
 		Lib.println("  -h: show this help");
 		Lib.println("  -v: verbose mode (display more informations)");
 		Lib.println("");
