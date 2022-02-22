@@ -357,6 +357,13 @@ class Main {
 		if( !sys.FileSystem.exists(exePath) )
 			error("Cannot sign executable, file not found: "+exePath);
 
+		var fp = FilePath.fromFile(exePath);
+		if( fp.extension!="exe" ) {
+			print("  Warning: only supported on Windows executables");
+			return false;
+		}
+
+
 		// Check if MS SignTool is installed
 		if( !checkExeInPath("signtool.exe") )
 			error('You need "signtool.exe" in PATH. You can get it by installing Microsoft Windows SDK (only pick "signing tools").');
@@ -373,12 +380,14 @@ class Main {
 		// Get password for env "CSC_KEY_PASSWORD" or by asking the user for it
 		var pass = Sys.getEnv("CSC_KEY_PASSWORD");
 		if( pass==null ) {
-			Sys.print("Enter PFX password: ");
+			Sys.print("  Enter PFX password: ");
 			pass = Sys.stdin().readLine();
 		}
 		var result = Sys.command('signtool.exe sign /f "$pfx" /fd SHA256 /t http://timestamp.digicert.com /p "$pass" $exePath');
 		if( result!=0 )
 			error('Code signing failed! (code $result)');
+
+		return true;
 	}
 
 	static function cleanUpExit() {
