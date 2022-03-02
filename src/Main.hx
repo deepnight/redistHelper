@@ -79,6 +79,7 @@ class Main {
 	];
 	static var SINGLE_PARAMETERS = [
 		"-zip" => true,
+		"-sign" => true,
 		"-pak" => true,
 		"-h" => true,
 		"--help" => true,
@@ -369,16 +370,21 @@ class Main {
 			error('You need "signtool.exe" in PATH. You can get it by installing Microsoft Windows SDK (only pick "signing tools").');
 
 		// Get PFX path from either argument or env "CSC_LINK"
-		var pfx = getParameter("-sign");
-		if( pfx==null || pfx=="" )
-			pfx = Sys.getEnv("CSC_LINK");
-		if( pfx==null || !sys.FileSystem.exists(pfx) )
-			error("Certificate file (.pfx) is missing after -sign argument.");
+		var pfx : Null<String> = null;
+		if( hasParameter("-pfx") && !hasParameter("-sign") )
+			error('Argument "-pfx" implies to also have "-sign" arg.');
+		if( hasParameter("-sign") ) {
+			pfx = getParameter("-pfx");
+			if( pfx==null || pfx=="" )
+				pfx = Sys.getEnv("CSC_LINK");
+			if( pfx==null || !sys.FileSystem.exists(pfx) )
+				error("Certificate file (.pfx) is missing after -pfx argument.");
+		}
 
 		Lib.println('  Using certificate: $pfx');
 
 		// Get password for env "CSC_KEY_PASSWORD" or by asking the user for it
-		var pass = Sys.getEnv("CSC_KEY_PASSWORD");
+		var pass = hasParameter("-pfx") ? null : Sys.getEnv("CSC_KEY_PASSWORD");
 		if( pass==null ) {
 			Sys.print("  Enter PFX password: ");
 			pass = Sys.stdin().readLine();
@@ -845,6 +851,7 @@ class Main {
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/CHANGELOG.md docs/LICENSE");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/README@read_me.txt");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/");
+		Lib.println("  haxelib run redistHelper myGame.hxml -sign -pfx path/to/myCertificate.pfx");
 		Lib.println("");
 		Lib.println("OPTIONS:");
 		Lib.println("  -o <outputDir>: change the default redistHelper output dir (default: \"redist/\")");
@@ -853,7 +860,8 @@ class Main {
 		Lib.println("  -hl32: when building Hashlink targets, this option will also package a 32bits version of the HL runtime in separate redist folders.");
 		Lib.println("  -zip: create a zip file for each build");
 		Lib.println("  -pak: generate a PAK file from the existing Heaps resource folder");
-		Lib.println("  -sign <pfxFile>: code sign the executables using the provided PFX certificate. A password will be requested to use the certificate. If the pfxFile argument is empty (eg. \"\"), the PFX path will be obtained from the environment var CSC_LINK. The password can also obtained from the environment var CSC_KEY_PASSWORD.");
+		Lib.println("  -sign: code sign the executables using a PFX certificate. A password will be requested to use the certificate. If the -pfx argument is not provided, the PFX path will be looked up in the environment var CSC_LINK. The password will also be looked up in the environment var CSC_KEY_PASSWORD.");
+		Lib.println("  -pfx <pathToPfxFile>: Use provided PFX file to sign the executables (implies the use of -sign)");
 		Lib.println("  -h: show this help");
 		Lib.println("  -v: verbose mode (display more informations)");
 		Lib.println("");
