@@ -511,12 +511,27 @@ class Main {
 
 		Sys.println("Copying extra files to "+targetPath+"...");
 
+		// Ignored files/dirs
+		var ignores = [
+			".tmp",
+		];
+
+		if( hasParameter("-ignore") ) {
+			var rawIgnores = getParameter("-ignore");
+			if( rawIgnores==null || rawIgnores.length==0 )
+				error("Missing ignored file names");
+
+			ignores = ignores.concat( rawIgnores.split(",") );
+		}
+		Sys.println("  Ignoring elements: "+ignores.join(", "));
+
+		// Copy extra files/dirs
 		for(f in extraFiles) {
 			if( f.isDir ) {
 				// Copy a directory structure
 				if( verbose )
 					Lib.println(" -> DIRECTORY: "+projectDir+f.source.full+"  =>  "+targetPath);
-				FileTools.copyDirectoryRec(f.source.full, targetPath);
+				FileTools.copyDirectoryRec(f.source.full, targetPath, ignores);
 
 				// Rename
 				if( f.rename!=null ) {
