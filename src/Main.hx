@@ -514,6 +514,8 @@ class Main {
 		// Ignored files/dirs
 		var ignores = [
 			".tmp",
+			".git",
+			".svn",
 		];
 
 		if( hasParameter("-ignore") ) {
