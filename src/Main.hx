@@ -431,7 +431,7 @@ class Main {
 			if( ignores.names.length>0 )
 				extraArgs.push("-exclude-names "+ignores.names.join(","));
 			if( ignores.exts.length>0 )
-				extraArgs.push("-exclude-ext "+ignores.exts.join(","));
+				extraArgs.push("-exclude "+ignores.exts.join(","));
 
 			if( extraArgs.length>0 )
 				Sys.println("  Extra arguments: "+extraArgs.join(" "));
