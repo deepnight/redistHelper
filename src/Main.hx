@@ -423,9 +423,21 @@ class Main {
 				if( Sys.command("haxe -hl "+PAK_BUILDER_BIN+" -lib heaps -main hxd.fmt.pak.Build") != 0 )
 					error("Could not compile PAK builder!");
 			}
-			// Run it
+
+			// Ignore elements
+			var extraArgs = [];
 			Lib.println("Creating PAK...");
-			if( Sys.command("hl "+PAK_BUILDER_BIN+" -out "+PAK_BUILDER_OUT)!=0 ) {
+			var ignores = getIgnoredElements();
+			if( ignores.names.length>0 )
+				extraArgs.push("-exclude-names "+ignores.names.join(","));
+			if( ignores.exts.length>0 )
+				extraArgs.push("-exclude-ext"+ignores.exts.join(","));
+
+			if( extraArgs.length>0 )
+				Sys.println("  Extra arguments: "+extraArgs.join(" "));
+
+			// Run it
+			if( Sys.command( "hl "+PAK_BUILDER_BIN+" -out "+PAK_BUILDER_OUT+" "+extraArgs.join(" ") ) != 0 ) {
 				error("Failed to run HL to build PAK!");
 			}
 		}
@@ -505,6 +517,33 @@ class Main {
 		return code;
 	}
 
+
+	static function getIgnoredElements() {
+		var out = {
+			names: [],
+			exts: [],
+		}
+
+		if( !hasParameter("-ignore") )
+			return out;
+
+		if( getParameter("-ignore")==null )
+			error("Missing names or extensions after -ignore");
+
+		var parts = getParameter("-ignore").split(",");
+		for(p in parts) {
+			p = StringTools.trim(p);
+			if( p.indexOf("*.")>0 )
+				error("Malformed ignored file name: "+p);
+			else if( p.indexOf("*.")==0 )
+				out.exts.push( p.substr(2) );
+			else
+				out.names.push(p);
+		}
+		return out;
+	}
+
+
 	static function copyExtraFilesIn(extraFiles:Array<ExtraCopiedFile>, targetPath:String) {
 		if( extraFiles.length==0 )
 			return;
@@ -512,20 +551,11 @@ class Main {
 		Sys.println("Copying extra files to "+targetPath+"...");
 
 		// Ignored files/dirs
-		var ignores = [
-			".tmp",
-			".git",
-			".svn",
-		];
-
-		if( hasParameter("-ignore") ) {
-			var rawIgnores = getParameter("-ignore");
-			if( rawIgnores==null || rawIgnores.length==0 )
-				error("Missing ignored file names");
-
-			ignores = ignores.concat( rawIgnores.split(",") );
-		}
-		Sys.println("  Ignoring elements: "+ignores.join(", "));
+		var ignores = getIgnoredElements();
+		ignores.names.push(".tmp");
+		ignores.names.push(".git");
+		ignores.names.push(".svn");
+		Sys.println("  Ignoring: names="+ignores.names+" extensions="+ignores.exts);
 
 		// Copy extra files/dirs
 		for(f in extraFiles) {
@@ -533,7 +563,7 @@ class Main {
 				// Copy a directory structure
 				if( verbose )
 					Lib.println(" -> DIRECTORY: "+projectDir+f.source.full+"  =>  "+targetPath);
-				FileTools.copyDirectoryRec(f.source.full, targetPath, ignores);
+				FileTools.copyDirectoryRec(f.source.full, targetPath, ignores.names, ignores.exts);
 
 				// Rename
 				if( f.rename!=null ) {
