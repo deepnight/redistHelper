@@ -867,7 +867,8 @@ class Main {
 		Lib.println("  haxelib run redistHelper myGame.hxml");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/CHANGELOG.md docs/LICENSE");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/README@read_me.txt");
-		Lib.println("  haxelib run redistHelper myGame.hxml docs/");
+		Lib.println("  haxelib run redistHelper myGame.hxml docs");
+		Lib.println("  haxelib run redistHelper myGame.hxml docs -ignore backups");
 		Lib.println("  haxelib run redistHelper myGame.hxml -sign -pfx path/to/myCertificate.pfx");
 		Lib.println("");
 		Lib.println("OPTIONS:");
@@ -876,6 +877,7 @@ class Main {
 		Lib.println("  -icon <iconFilePath>: replace EXE icon (only works for Windows and HL target)");
 		Lib.println("  -hl32: when building Hashlink targets, this option will also package a 32bits version of the HL runtime in separate redist folders.");
 		Lib.println("  -zip: create a zip file for each build");
+		Lib.println("  -ignore <fileOrDirNames>: List of files to be ignored when copying extra directories (typically temp files or similar things). Names should be separated by a comma \",\", no space.");
 		Lib.println("  -pak: generate a PAK file from the existing Heaps resource folder");
 		Lib.println("  -sign: code sign the executables using a PFX certificate. A password will be requested to use the certificate. If the -pfx argument is not provided, the PFX path will be looked up in the environment var CSC_LINK. The password will also be looked up in the environment var CSC_KEY_PASSWORD.");
 		Lib.println("  -pfx <pathToPfxFile>: Use provided PFX file to sign the executables (implies the use of -sign)");
