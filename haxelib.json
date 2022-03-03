@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "classPath": "src/",
-  "releasenote": "Added Windows code signing using PFX certificates. See -sign arg in help.",
+  "releasenote": "Added Windows code signing using PFX certificates. See -sign arg in help. Added -ignore arg.",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
