@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "classPath": "src/",
-  "releasenote": "Added Windows code signing using PFX certificates. See -sign arg in help. Added -ignore arg.",
+  "releasenote": "Updated steam.hdll",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
