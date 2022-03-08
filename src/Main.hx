@@ -649,9 +649,16 @@ class Main {
 		if( sys.FileSystem.exists(redistHelperDir+f) )
 			return redistHelperDir+f;
 
+		var paths = [];
+
+		// Prioritize files from the RedistHelper folder
+		if( useHl32bits )
+			paths.push(redistHelperDir+"redistFiles/hl32/");  // HL 32bits in priority over 64bits
+		paths.push(redistHelperDir+"redistFiles/hl64/"); // HL 64bits
+		paths.push(redistHelperDir+"redistFiles/");
+
 		// Locate haxe tools
 		var haxeTools = ["haxe.exe", "hl.exe", "neko.exe" ];
-		var paths = [];
 		for(path in Sys.getEnv("PATH").split(";")) {
 			path = cleanUpDirPath(path);
 			for(f in haxeTools)
@@ -660,12 +667,6 @@ class Main {
 					break;
 				}
 		}
-
-		if( useHl32bits ) {
-			// Prioritize 32bits files over 64bits
-			paths.insert(0, redistHelperDir+"redistFiles/hl32/");  // HL
-		}
-		paths.push(redistHelperDir+"redistFiles/");
 
 		if( paths.length<=0 )
 			throw "Haxe tools not found ("+haxeTools.join(", ")+") in PATH!";
