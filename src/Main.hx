@@ -2,8 +2,13 @@ import dn.Lib;
 import dn.FilePath;
 import dn.FileTools;
 
+typedef RuntimeFiles = {
+	var platform: Platform;
+	var files:Array<RuntimeFile>;
+}
+
 typedef RuntimeFile = {
-	var lib: Null<String>;
+	var ?lib: Null<String>;
 	var f: String; // defaults to 64bits version
 	var ?f32: String; // alternative 32bits version
 	var ?executableFormat: String;
@@ -15,68 +20,131 @@ typedef ExtraCopiedFile = {
 	var rename: Null<String>;
 }
 
+enum Platform {
+	Windows;
+	Macos;
+	Linux;
+}
+
 class Main {
-	static var NEKO_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
-		{ lib:null, f:"neko.lib" },
+	static var NEKO_RUNTIME_FILES_WIN : RuntimeFiles = {
+		platform: Windows,
+		files: [
+			{ f:"neko.lib" },
 
-		{ lib:null, f:"concrt140.dll" },
-		{ lib:null, f:"gcmt-dll.dll" },
-		{ lib:null, f:"msvcp140.dll" },
-		{ lib:null, f:"neko.dll" },
-		{ lib:null, f:"vcruntime140.dll" },
+			{ f:"concrt140.dll" },
+			{ f:"gcmt-dll.dll" },
+			{ f:"msvcp140.dll" },
+			{ f:"neko.dll" },
+			{ f:"vcruntime140.dll" },
 
-		{ lib:null, f:"mysql.ndll" },
-		{ lib:null, f:"mysql5.ndll" },
-		{ lib:null, f:"regexp.ndll" },
-		{ lib:null, f:"sqlite.ndll" },
-		{ lib:null, f:"ssl.ndll" },
-		{ lib:null, f:"std.ndll" },
-		{ lib:null, f:"ui.ndll" },
-		{ lib:null, f:"zlib.ndll" },
-	];
+			{ f:"mysql.ndll" },
+			{ f:"mysql5.ndll" },
+			{ f:"regexp.ndll" },
+			{ f:"sqlite.ndll" },
+			{ f:"ssl.ndll" },
+			{ f:"std.ndll" },
+			{ f:"ui.ndll" },
+			{ f:"zlib.ndll" },
+		],
+	}
 
-	static var HL_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
-		{ lib:null, f:"hl.exe", executableFormat:"$.exe" },
-		{ lib:null, f:"libhl.dll" },
-		{ lib:null, f:"msvcr120.dll" },
-		{ lib:null, f:"msvcp120.dll" },
-		{ lib:null, f:"fmt.hdll" },
-		{ lib:null, f:"ssl.hdll" },
+	static var HL_RUNTIME_FILES_WIN : RuntimeFiles = {
+		platform: Windows,
+		files: [
+			{ f:"hl.exe", executableFormat:"$.exe" },
+			{ f:"libhl.dll" },
+			{ f:"msvcr120.dll" },
+			{ f:"msvcp120.dll" },
+			{ f:"fmt.hdll" },
+			{ f:"ssl.hdll" },
 
-		{ lib:"heaps", f:"OpenAL32.dll" },
-		{ lib:"heaps", f:"openal.hdll" },
-		{ lib:"heaps", f:"ui.hdll" },
-		{ lib:"heaps", f:"uv.hdll" },
+			{ lib:"heaps", f:"OpenAL32.dll" },
+			{ lib:"heaps", f:"openal.hdll" },
+			{ lib:"heaps", f:"ui.hdll" },
+			{ lib:"heaps", f:"uv.hdll" },
 
-		{ lib:"hlsdl", f:"SDL2.dll" },
-		{ lib:"hlsdl", f:"sdl.hdll" },
+			{ lib:"hlsdl", f:"SDL2.dll" },
+			{ lib:"hlsdl", f:"sdl.hdll" },
 
-		{ lib:"hlsteam", f:"steam.hdll" },
-		{ lib:"hlsteam", f:"steam_api64.dll", f32:"steam_api.dll" },
+			{ lib:"hlsteam", f:"steam.hdll" },
+			{ lib:"hlsteam", f:"steam_api64.dll", f32:"steam_api.dll" },
 
-		{ lib:"hldx", f:"directx.hdll" },
-		{ lib:"hldx", f:"d3dcompiler_47.dll" },
-	];
-	static var HL_RUNTIME_FILES_MAC : Array<RuntimeFile> = [
-		{ lib:null, f:"redistFiles/mac/hl", executableFormat:"$" },
-		{ lib:null, f:"redistFiles/mac/libhl.dylib" },
-		{ lib:null, f:"redistFiles/mac/libpng16.16.dylib" }, // fmt
-		{ lib:null, f:"redistFiles/mac/libvorbis.0.dylib" }, // fmt
-		{ lib:null, f:"redistFiles/mac/libvorbisfile.3.dylib" }, // fmt
-		{ lib:null, f:"redistFiles/mac/libmbedtls.10.dylib" }, // SSL
+			{ lib:"hldx", f:"directx.hdll" },
+			{ lib:"hldx", f:"d3dcompiler_47.dll" },
+		],
+	}
 
-		{ lib:"heaps", f:"redistFiles/mac/libuv.1.dylib" },
-		{ lib:"heaps", f:"redistFiles/mac/libopenal.1.dylib" },
+	static var HL_RUNTIME_FILES_MAC: RuntimeFiles = {
+		platform: Macos,
+		files: [
+			{ f:"redistFiles/mac/hl", executableFormat:"$" },
+			{ f:"redistFiles/mac/libhl.dylib" },
+			{ f:"redistFiles/mac/libpng16.16.dylib" }, // fmt
+			{ f:"redistFiles/mac/libvorbis.0.dylib" }, // fmt
+			{ f:"redistFiles/mac/libvorbisfile.3.dylib" }, // fmt
+			{ f:"redistFiles/mac/libmbedtls.10.dylib" }, // SSL
 
-		{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
-	];
+			{ lib:"heaps", f:"redistFiles/mac/libuv.1.dylib" },
+			{ lib:"heaps", f:"redistFiles/mac/libopenal.1.dylib" },
+
+			{ lib:"hlsdl", f:"redistFiles/mac/libSDL2-2.0.0.dylib" },
+		],
+	}
+
+	static var HL_RUNTIME_FILES_LINUX: RuntimeFiles = {
+		platform: Linux,
+		files: [
+			{ f:"redistFiles/hl_linux/hl", executableFormat:"$" },
+			{ f:"redistFiles/hl_linux/fmt.hdll" },
+			{ f:"redistFiles/hl_linux/mysql.hdll" },
+			{ f:"redistFiles/hl_linux/sdl.hdll" },
+			{ f:"redistFiles/hl_linux/ssl.hdll" },
+
+			{ f:"redistFiles/hl_linux/libbsd.so.0" },
+			{ f:"redistFiles/hl_linux/libhl.so" },
+			{ f:"redistFiles/hl_linux/libmbedcrypto.so" },
+			{ f:"redistFiles/hl_linux/libmbedcrypto.so.0" },
+			{ f:"redistFiles/hl_linux/libmbedcrypto.so.2.2.1" },
+			{ f:"redistFiles/hl_linux/libmbedtls.so" },
+			{ f:"redistFiles/hl_linux/libmbedtls.so.10" },
+			{ f:"redistFiles/hl_linux/libmbedtls.so.2.2.1" },
+			{ f:"redistFiles/hl_linux/libmbedx509.so" },
+			{ f:"redistFiles/hl_linux/libmbedx509.so.0" },
+			{ f:"redistFiles/hl_linux/libmbedx509.so.2.2.1" },
+			{ f:"redistFiles/hl_linux/libogg.so.0" },
+			{ f:"redistFiles/hl_linux/libopenal.so.1" },
+			{ f:"redistFiles/hl_linux/libpng16.so.16" },
+			{ f:"redistFiles/hl_linux/libSDL2-2.0.so" },
+			{ f:"redistFiles/hl_linux/libSDL2-2.0.so.0" },
+			{ f:"redistFiles/hl_linux/libSDL2-2.0.so.0.4.0" },
+			{ f:"redistFiles/hl_linux/libSDL2.so" },
+			{ f:"redistFiles/hl_linux/libsndio.so" },
+			{ f:"redistFiles/hl_linux/libsndio.so.6.1" },
+			{ f:"redistFiles/hl_linux/libsteam_api.so" },
+			{ f:"redistFiles/hl_linux/libturbojpeg.so.0" },
+			{ f:"redistFiles/hl_linux/libuv.so.1" },
+			{ f:"redistFiles/hl_linux/libvorbis.so.0" },
+			{ f:"redistFiles/hl_linux/libvorbisfile.so.3" },
+
+			{ lib:"heaps", f:"redistFiles/hl_linux/openal.hdll" },
+			{ lib:"heaps", f:"redistFiles/hl_linux/ui.hdll" },
+			{ lib:"heaps", f:"redistFiles/hl_linux/uv.hdll" },
+
+			{ lib:"hlsteam", f:"redistFiles/hl_linux/steam.hdll" },
+		],
+	}
 
 	static var PAK_BUILDER_BIN = "pakBuilder.hl";
 	static var PAK_BUILDER_OUT = "redistTmp";
 
-	static var SWF_RUNTIME_FILES_WIN : Array<RuntimeFile> = [
-		{ lib:null, f:"redistFiles/flash/win_flashplayer_32_sa.exe", executableFormat:"flashPlayer.bin" },
-	];
+	static var SWF_RUNTIME_FILES_WIN : RuntimeFiles = {
+		platform: Windows,
+		files: [
+			{ lib:null, f:"redistFiles/flash/win_flashplayer_32_sa.exe", executableFormat:"flashPlayer.bin" },
+		],
+	}
+
 	static var SINGLE_PARAMETERS = [
 		"-zip" => true,
 		"-sign" => true,
@@ -87,6 +155,8 @@ class Main {
 		"-v" => true,
 		"--verbose" => true,
 		"-hl32" => true,
+		"-mac" => true,
+		"-linux" => true,
 	];
 
 	static var NEW_LINE = "\n";
@@ -206,7 +276,7 @@ class Main {
 				Lib.println("Building "+hxml+"...");
 				compile(hxml);
 
-				function makeHl(hlDir:String, files:Array<RuntimeFile>, use32bits:Bool) {
+				function makeHl(hlDir:String, files:RuntimeFiles, use32bits:Bool) {
 					Lib.println("Packaging "+hlDir+"...");
 					initRedistDir(hlDir, extraFiles);
 
@@ -251,9 +321,18 @@ class Main {
 					}
 
 					// SDL Mac
-					makeHl(baseRedistDir+"/opengl_mac/"+projectName, HL_RUNTIME_FILES_MAC, false);
-					if( zipping )
-						zipFolder( '$baseRedistDir/${projectName}_opengl_mac.zip', baseRedistDir+"/opengl_mac/");
+					// if( hasParameter("-mac") ) {
+					// 	makeHl(baseRedistDir+"/opengl_mac/"+projectName, HL_RUNTIME_FILES_MAC, false);
+					// 	if( zipping )
+					// 		zipFolder( '$baseRedistDir/${projectName}_opengl_mac.zip', baseRedistDir+"/opengl_mac/");
+					// }
+
+					// SDL Linux
+					if( hasParameter("-linux") ) {
+						makeHl(baseRedistDir+"/opengl_linux/"+projectName, HL_RUNTIME_FILES_LINUX, false);
+						if( zipping )
+							zipFolder( '$baseRedistDir/${projectName}_opengl_linux.zip', baseRedistDir+"/opengl_linux/");
+					}
 				}
 			}
 
@@ -443,12 +522,12 @@ class Main {
 		}
 	}
 
-	static function copyRuntimeFiles(hxmlPath:String, targetName:String, targetDir:String, runTimeFiles:Array<RuntimeFile>, useHl32bits:Bool) {
+	static function copyRuntimeFiles(hxmlPath:String, targetName:String, targetDir:String, runTimeFiles:RuntimeFiles, useHl32bits:Bool) {
 		if( verbose )
 			Lib.println("Copying "+targetName+" runtime files to "+targetDir+"... ");
 
 		var exes = [];
-		for( r in runTimeFiles ) {
+		for( r in runTimeFiles.files ) {
 			if( r.lib==null || hxmlRequiresLib(hxmlPath, r.lib) ) {
 				var fileName = useHl32bits && r.f32!=null ? r.f32 : r.f;
 				var from = findFile(fileName, useHl32bits);
@@ -471,7 +550,7 @@ class Main {
 			copy(PAK_BUILDER_OUT+".pak", targetDir+"/res.pak");
 
 		// Set EXEs icon
-		if( hasParameter("-icon") && targetDir.indexOf("mac") == -1 ) // but not for mac builds
+		if( hasParameter("-icon") && runTimeFiles.platform==Windows ) // Windows only
 			for( exeFp in exes ) {
 				var i = getParameter("-icon");
 				if( i==null )
@@ -494,8 +573,8 @@ class Main {
 					error("rcedit failed!");
 			}
 
-		// Sign exe
-		if( hasParameter("-sign") && exes.length>0 )
+		// Sign exe (Windows only)
+		if( hasParameter("-sign") && exes.length>0 && runTimeFiles.platform==Windows )
 			for( fp in exes )
 				signExecutable(fp.full);
 	}
@@ -906,6 +985,7 @@ class Main {
 		Lib.println("  -o <outputDir>: change the default redistHelper output dir (default: \"redist/\")");
 		Lib.println("  -p <projectName>: change the default project name (if not provided, it will use the name of the parent folder where this script is called)");
 		Lib.println("  -icon <iconFilePath>: replace EXE icon (only works for Windows and HL target)");
+		Lib.println("  -linux: package an Hashlink (HL) for Linux. This requires having an HXML using lib SDL");
 		Lib.println("  -hl32: when building Hashlink targets, this option will also package a 32bits version of the HL runtime in separate redist folders.");
 		Lib.println("  -zip: create a zip file for each build");
 		Lib.println("  -ignore <namesOrExtensions>: List of files to be ignored when copying extra directories (typically temp files or similar things). Names should be separated by a comma \",\", no space. To ignore file extensions, use the \"*.ext\" format. See examples.");
