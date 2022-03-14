@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.5.8",
+  "version": "0.6.0",
   "classPath": "src/",
-  "releasenote": "Updated steam.hdll (fixed 32bits version)",
+  "releasenote": "Added Linux HL support",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
