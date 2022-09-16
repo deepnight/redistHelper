@@ -11,12 +11,13 @@
 				position: absolute;
 				width: 100%;
 				height: 100%;
+				overflow: hidden;
 			}
 			canvas {
 				width : 100% !important;
 				height : 100% !important;
 			}
-			.fullscreen {
+			#fullscreen {
 				position: absolute;
 				top: 4px;
 				right: 2px;
@@ -27,7 +28,7 @@
 				color: white;
 				cursor: pointer;
 			}
-			.fullscreen:hover {
+			#fullscreen:hover {
 				background-color: orange;
 			}
 		</style>
@@ -39,8 +40,19 @@
 		<script type="text/javascript" src="%js%"></script>
 
 		<!-- Fullscreen button -->
-		<button class="fullscreen" onclick="fullscreen()">🖵</button>
+		<button id="fullscreen" onclick="fullscreen()">🖵</button>
 		<script type="text/javascript">
+			function inIframe () {
+				try {
+					return window.self !== window.top;
+				} catch (e) {
+					return true;
+				}
+			}
+
+			if( inIframe() )
+				document.getElementById("fullscreen").style.display = "none";
+
 			function fullscreen() {
 				document.getElementById("webgl").requestFullscreen();
 			}
