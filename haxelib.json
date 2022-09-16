@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "classPath": "src/",
-  "releasenote": "Added Linux HL support",
+  "releasenote": "Added fullscreen button to HTML/JS output",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
