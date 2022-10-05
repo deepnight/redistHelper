@@ -363,7 +363,7 @@ class Main {
 
 				copyExtraFilesIn(extraFiles, jsDir);
 				if( zipping )
-					zipFolder( baseRedistDir+"/js.zip", jsDir);
+					zipFolder( jsDir+"/js.zip", jsDir, true);
 			}
 
 			// Neko
@@ -665,11 +665,15 @@ class Main {
 		}
 	}
 
-	static function zipFolder(zipPath:String, basePath:String) {
+	static function zipFolder(zipPath:String, basePath:String, zipDirContent=false) {
 		if( zipPath.indexOf(".zip")<0 )
 			zipPath+=".zip";
 
-		Lib.println("Zipping "+basePath+"...");
+		if( zipDirContent )
+			Lib.println("Zipping files in "+basePath+"...");
+		else
+			Lib.println("Zipping "+basePath+"...");
+
 		if( !verbose )
 			Lib.print(" -> ");
 
@@ -718,10 +722,14 @@ class Main {
 				e.crc32 = haxe.crypto.Crc32.make(e.data);
 				haxe.zip.Tools.compress(e,9);
 			}
+
+		// Build Zip
 		var w = new haxe.zip.Writer(out);
 		w.write(entries);
-		Lib.println(" -> Created "+zipPath+" ("+out.length+" bytes)");
+
+		// Write it
 		sys.io.File.saveBytes(zipPath, out.getBytes());
+		Lib.println(" -> Created "+zipPath+" ("+out.length+" bytes)");
 	}
 
 	static function findFile(f:String, useHl32bits:Bool) {

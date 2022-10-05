@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "classPath": "src/",
-  "releasenote": "Added fullscreen button to HTML/JS output",
+  "releasenote": "-zip option for JS is now only zipping files and not parent folder",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
