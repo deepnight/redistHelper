@@ -363,7 +363,7 @@ class Main {
 
 				copyExtraFilesIn(extraFiles, jsDir);
 				if( zipping )
-					zipFolder( jsDir+"/js.zip", jsDir, true);
+					zipFolder( '$baseRedistDir/js.zip', jsDir, true);
 			}
 
 			// Neko
