@@ -990,6 +990,7 @@ class Main {
 		Lib.println("  haxelib run redistHelper myGame.hxml");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/CHANGELOG.md docs/LICENSE");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs/README@read_me.txt");
+		Lib.println("  haxelib run redistHelper myGame.hxml someFile.txt@subDir/newName.txt");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs");
 		Lib.println("  haxelib run redistHelper myGame.hxml docs -ignore backups,*.zip");
 		Lib.println("  haxelib run redistHelper myGame.hxml -sign -pfx path/to/myCertificate.pfx");
