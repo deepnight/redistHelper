@@ -17,7 +17,7 @@ typedef RuntimeFile = {
 typedef ExtraCopiedFile = {
 	var source : FilePath;
 	var isDir : Bool;
-	var rename: Null<String>;
+	var rename: Null<FilePath>;
 }
 
 enum Platform {
@@ -220,7 +220,7 @@ class Main {
 				if( renameParts.length==1 )
 					extraFiles.push({ source:originalFile, rename:null, isDir:isDir });
 				else
-					extraFiles.push({ source:originalFile, rename:renameParts[1], isDir:isDir });
+					extraFiles.push({ source:originalFile, rename:FilePath.fromFile(renameParts[1]), isDir:isDir });
 			}
 		if( verbose ) {
 			Sys.println("ExtraFiles listing:");
@@ -655,12 +655,17 @@ class Main {
 			}
 			else {
 				// Copy a file
-				var to = f.source.fileWithExt;
-				if( f.rename!=null )
-					to = f.rename;
+				var targetFp = f.source.clone();
+				targetFp.setDirectory(null);
+				if( f.rename!=null ) {
+					targetFp = f.rename.clone();
+					targetFp.prependDirectory(targetPath);
+				}
+
 				if( verbose )
-					Lib.println(" -> FILE: "+projectDir+f.source.full+"  =>  "+targetPath+"/"+to);
-				copy(projectDir+f.source.full, targetPath+"/"+to);
+					Lib.println(" -> FILE: "+projectDir+f.source.full+"  =>  "+targetFp.full);
+				sys.FileSystem.createDirectory(targetFp.directory);
+				copy(projectDir+f.source.full, targetFp.full);
 			}
 		}
 	}
@@ -779,7 +784,7 @@ class Main {
 			var allExtraFiles = [];
 			for(f in extraFiles)
 				if( !f.isDir )
-					allExtraFiles.push(f.rename!=null ? f.rename : f.source.fileWithExt);
+					allExtraFiles.push(f.rename!=null ? f.rename.fileWithExt : f.source.fileWithExt);
 				else {
 					var all = FileTools.listAllFilesRec(f.source.full);
 					for(f in all.files)
