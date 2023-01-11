@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "classPath": "src/",
-  "releasenote": "-zip option for JS is now only zipping files and not parent folder",
+  "releasenote": "Added renaming & moving to sub dir support for extra files",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
