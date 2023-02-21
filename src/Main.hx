@@ -17,7 +17,7 @@ typedef RuntimeFile = {
 typedef ExtraCopiedFile = {
 	var source : FilePath;
 	var isDir : Bool;
-	var rename: Null<FilePath>;
+	var target: Null<FilePath>;
 }
 
 enum Platform {
@@ -218,15 +218,15 @@ class Main {
 				var isDir = sys.FileSystem.isDirectory(path);
 				var originalFile = isDir ? FilePath.fromDir(path) : FilePath.fromFile(path);
 				if( renameParts.length==1 )
-					extraFiles.push({ source:originalFile, rename:null, isDir:isDir });
+					extraFiles.push({ source:originalFile, target:null, isDir:isDir });
 				else
-					extraFiles.push({ source:originalFile, rename:FilePath.fromFile(renameParts[1]), isDir:isDir });
+					extraFiles.push({ source:originalFile, target:FilePath.fromFile(renameParts[1]), isDir:isDir });
 			}
 		if( verbose ) {
 			Sys.println("ExtraFiles listing:");
 			for(e in extraFiles) {
 				Sys.println( " -> "+e.source.full
-					+ ( e.rename!=null ? " >> "+e.rename : "" )
+					+ ( e.target!=null ? " >> "+e.target : "" )
 					+ ( e.isDir ? " [DIRECTORY]" : "" )
 				);
 			}
@@ -644,21 +644,21 @@ class Main {
 					Lib.println(" -> DIRECTORY: "+projectDir+f.source.full+"  =>  "+targetPath);
 				FileTools.copyDirectoryRec(f.source.full, targetPath, ignores.names, ignores.exts);
 
-				// Rename
-				if( f.rename!=null ) {
+				// Rename to target
+				if( f.target!=null ) {
 					var arr = f.source.getDirectoryArray();
 					var folderName = arr[arr.length-1];
 					if( verbose )
-						Lib.println("   -> renaming "+targetPath+"/"+folderName+" to: "+targetPath+"/"+f.rename);
-					sys.FileSystem.rename(targetPath+"/"+folderName, targetPath+"/"+f.rename);
+						Lib.println("   -> renaming "+targetPath+"/"+folderName+" to: "+targetPath+"/"+f.target);
+					sys.FileSystem.rename(targetPath+"/"+folderName, targetPath+"/"+f.target);
 				}
 			}
 			else {
 				// Copy a file
 				var targetFp = f.source.clone();
 				targetFp.setDirectory(null);
-				if( f.rename!=null ) {
-					targetFp = f.rename.clone();
+				if( f.target!=null ) {
+					targetFp = f.target.clone();
 					targetFp.prependDirectory(targetPath);
 				}
 
@@ -784,7 +784,7 @@ class Main {
 			var allExtraFiles = [];
 			for(f in extraFiles)
 				if( !f.isDir )
-					allExtraFiles.push(f.rename!=null ? f.rename.fileWithExt : f.source.fileWithExt);
+					allExtraFiles.push(f.target!=null ? f.target.fileWithExt : f.source.fileWithExt);
 				else {
 					var all = FileTools.listAllFilesRec(f.source.full);
 					for(f in all.files)
