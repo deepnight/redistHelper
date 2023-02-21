@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "classPath": "src/",
-  "releasenote": "Added renaming & moving to sub dir support for extra files",
+  "releasenote": "Better support for dirs in extraFiles arguments",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
