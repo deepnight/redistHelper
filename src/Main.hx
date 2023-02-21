@@ -798,15 +798,21 @@ class Main {
 			Lib.println("Initializing folder: "+d+"...");
 		try {
 			// List all extra files, including folders content
-			var allExtraFiles = [];
+			var knownExtraFiles = [];
 			for(f in extraFiles)
-				if( !f.sourceIsDir )
-					allExtraFiles.push(f.target!=null ? f.target.fileWithExt : f.source.fileWithExt);
+				if( !f.sourceIsDir ) {
+					if( f.target!=null && f.targetIsDir )
+						knownExtraFiles.push(f.source.fileWithExt);
+					else
+						knownExtraFiles.push(f.target!=null ? f.target.fileWithExt : f.source.fileWithExt);
+				}
 				else {
 					var all = FileTools.listAllFilesRec(f.source.full);
 					for(f in all.files)
-						allExtraFiles.push( FilePath.extractFileWithExt(f) );
+						knownExtraFiles.push( FilePath.extractFileWithExt(f) );
 				}
+			if( verbose )
+				Lib.println("Safe for deletion files: "+knownExtraFiles.join(", "));
 
 
 			var cwd = StringTools.replace( Sys.getCwd(), "\\", "/" );
@@ -817,7 +823,7 @@ class Main {
 			directoryContainsOnly(
 				d,
 				["exe","dat","dll","hdll","ndll","js","swf","html","dylib","zip","lib","bin","bat","pak"],
-				allExtraFiles
+				knownExtraFiles
 			);
 			FileTools.deleteDirectoryRec(d);
 			createDirectory(d);
@@ -869,13 +875,13 @@ class Main {
 		sys.FileSystem.deleteDirectory(path+"/");
 	}
 
-	static function directoryContainsOnly(path:String, allowedExts:Array<String>, ignoredFiles:Array<String>) {
+	static function directoryContainsOnly(path:String, allowedExts:Array<String>, safeForDeletion:Array<String>) {
 		if( !sys.FileSystem.exists(path) )
 			return;
 
 		for( e in sys.FileSystem.readDirectory(path) ) {
 			if( sys.FileSystem.isDirectory(path+"/"+e) )
-				directoryContainsOnly(path+"/"+e, allowedExts, ignoredFiles);
+				directoryContainsOnly(path+"/"+e, allowedExts, safeForDeletion);
 			else {
 				var suspFile = true;
 				if( e.indexOf(".")<0 )
@@ -886,7 +892,7 @@ class Main {
 						suspFile = false;
 						break;
 					}
-				for(f in ignoredFiles)
+				for(f in safeForDeletion)
 					if( f==e )
 						suspFile = false;
 				if( suspFile )
