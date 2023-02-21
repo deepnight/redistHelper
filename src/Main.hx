@@ -16,8 +16,9 @@ typedef RuntimeFile = {
 
 typedef ExtraCopiedFile = {
 	var source : FilePath;
-	var isDir : Bool;
+	var sourceIsDir : Bool;
 	var target: Null<FilePath>;
+	var targetIsDir : Bool;
 }
 
 enum Platform {
@@ -210,24 +211,35 @@ class Main {
 				hxmlPaths.push(p);
 			else {
 				// Found an isolated extra file to copy
-				var renameParts = p.split("@");
-				var path = renameParts[0];
+				var targetParts = p.split("@");
+				var path = targetParts[0];
 				if( !sys.FileSystem.exists(path) )
 					error("File not found: "+path);
 
-				var isDir = sys.FileSystem.isDirectory(path);
-				var originalFile = isDir ? FilePath.fromDir(path) : FilePath.fromFile(path);
-				if( renameParts.length==1 )
-					extraFiles.push({ source:originalFile, target:null, isDir:isDir });
-				else
-					extraFiles.push({ source:originalFile, target:FilePath.fromFile(renameParts[1]), isDir:isDir });
+				var sourceIsDir = sys.FileSystem.isDirectory(path);
+				var originalFile = sourceIsDir ? FilePath.fromDir(path) : FilePath.fromFile(path);
+				if( targetParts.length==1 )
+					extraFiles.push({ source:originalFile, target:null, sourceIsDir:sourceIsDir, targetIsDir:sourceIsDir });
+				else {
+					var raw = targetParts[1];
+					var targetIsDir = false;
+					var targetFp = switch raw.charAt( raw.length-1 ) {
+						case "/", "\\":
+							targetIsDir = true;
+							FilePath.fromDir(raw);
+
+						case _:
+							targetIsDir = sourceIsDir;
+							FilePath.fromFile(raw);
+					}
+					extraFiles.push({ source:originalFile, target:targetFp, sourceIsDir:sourceIsDir, targetIsDir:targetIsDir });
+				}
 			}
 		if( verbose ) {
 			Sys.println("ExtraFiles listing:");
 			for(e in extraFiles) {
-				Sys.println( " -> "+e.source.full
-					+ ( e.target!=null ? " >> "+e.target : "" )
-					+ ( e.isDir ? " [DIRECTORY]" : "" )
+				Sys.println( " -> "+e.source.full + (e.sourceIsDir?"[DIR]":"")
+					+ ( e.target!=null ? " >> " + e.target + (e.targetIsDir?"[DIR]":"") : "" )
 				);
 			}
 		}
@@ -476,7 +488,7 @@ class Main {
 	}
 
 	static function cleanUpExit() {
-		Lib.println("Cleaning up...");
+		Lib.println("Exiting...");
 
 		if( sys.FileSystem.exists(PAK_BUILDER_BIN) )
 			sys.FileSystem.deleteFile(PAK_BUILDER_BIN);
@@ -638,7 +650,7 @@ class Main {
 
 		// Copy extra files/dirs
 		for(f in extraFiles) {
-			if( f.isDir ) {
+			if( f.sourceIsDir ) {
 				// Copy a directory structure
 				if( verbose )
 					Lib.println(" -> DIRECTORY: "+projectDir+f.source.full+"  =>  "+targetPath);
@@ -654,18 +666,23 @@ class Main {
 				}
 			}
 			else {
-				// Copy a file
+				// Copy a single file
 				var targetFp = f.source.clone();
 				targetFp.setDirectory(null);
 				if( f.target!=null ) {
-					targetFp = f.target.clone();
+					if( f.target.fileName==null )
+						targetFp.setDirectory( f.target.directory );
+					else
+						targetFp = f.target.clone();
 					targetFp.prependDirectory(targetPath);
 				}
 
 				if( verbose )
 					Lib.println(" -> FILE: "+projectDir+f.source.full+"  =>  "+targetFp.full);
 				sys.FileSystem.createDirectory(targetFp.directory);
-				copy(projectDir+f.source.full, targetFp.full);
+
+				if( !copy(projectDir+f.source.full, targetFp.full, false) )
+					error("Can't copy \""+f.source.fileWithExt+"\" to \""+targetFp.full+"\". Maybe you meant to copy the file to a target directory? In this case, please add a slash or a backslash at the end of all your dir names.");
 			}
 		}
 	}
@@ -783,7 +800,7 @@ class Main {
 			// List all extra files, including folders content
 			var allExtraFiles = [];
 			for(f in extraFiles)
-				if( !f.isDir )
+				if( !f.sourceIsDir )
 					allExtraFiles.push(f.target!=null ? f.target.fileWithExt : f.source.fileWithExt);
 				else {
 					var all = FileTools.listAllFilesRec(f.source.full);
@@ -878,12 +895,15 @@ class Main {
 		}
 	}
 
-	static function copy(from:String, to:String) {
+	static function copy(from:String, to:String, exitOnFailure=true) {
 		try {
 			sys.io.File.copy(from, to);
+			return true;
 		}
 		catch(e:Dynamic) {
-			error("Can't copy "+from+" to "+to+" ("+e+")");
+			if( exitOnFailure )
+				error("Can't copy "+from+" to "+to+" ("+e+")");
+			return false;
 		}
 	}
 
