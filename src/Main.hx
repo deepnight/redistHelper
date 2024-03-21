@@ -148,6 +148,7 @@ class Main {
 
 	static var SINGLE_PARAMETERS = [
 		"-zip" => true,
+		"-nodir" => true,
 		"-sign" => true,
 		"-pak" => true,
 		"-h" => true,
@@ -187,6 +188,7 @@ class Main {
 			usage();
 		verbose = hasParameter("-v") || hasParameter("--verbose");
 		var zipping = hasParameter("-zip") || hasParameter("-z");
+		var createSubDirs = !hasParameter("-nodir");
 		var isolatedParams = getIsolatedParameters();
 
 		// Set CWD to the directory haxelib was called
@@ -275,6 +277,12 @@ class Main {
 		initRedistDir(baseRedistDir, extraFiles);
 
 
+		inline function _makeTargetDir(targetName:String, forceNoDir=false) {
+			return createSubDirs && !forceNoDir
+				? baseRedistDir+"/directx/"+projectName
+				: baseRedistDir+"/directx";
+		}
+
 		// Parse HXML files given as parameters
 		for(hxml in hxmlPaths) {
 			Sys.println("Parsing "+hxml+"...");
@@ -308,40 +316,40 @@ class Main {
 				// Package HL
 				if( directX ) {
 					// DirectX 64bits
-					makeHl(baseRedistDir+"/directx/"+projectName, HL_RUNTIME_FILES_WIN, false);
+					makeHl(_makeTargetDir("directx"), HL_RUNTIME_FILES_WIN, false);
 					if( zipping )
 						zipFolder( '$baseRedistDir/${projectName}_directx.zip', baseRedistDir+"/directx");
 
 					// DirectX 32bits
 					if( hasParameter("-hl32") ) {
-						makeHl(baseRedistDir+"/directx32/"+projectName, HL_RUNTIME_FILES_WIN, true); // directX 32 bits
+						makeHl(_makeTargetDir("directx32"), HL_RUNTIME_FILES_WIN, true); // directX 32 bits
 						if( zipping )
 							zipFolder( '$baseRedistDir/${projectName}_directx32.zip', baseRedistDir+"/directx32");
 					}
 				}
 				else {
 					// SDL Windows 64bits
-					makeHl(baseRedistDir+"/opengl_win/"+projectName, HL_RUNTIME_FILES_WIN, false);
+					makeHl(_makeTargetDir("opengl_win"), HL_RUNTIME_FILES_WIN, false);
 					if( zipping )
 						zipFolder( '$baseRedistDir/${projectName}_opengl_win.zip', baseRedistDir+"/opengl_win/");
 
 					// SDL Windows 32bits
 					if( hasParameter("-hl32") ) {
-						makeHl(baseRedistDir+"/opengl_win32/"+projectName, HL_RUNTIME_FILES_WIN, true);
+						makeHl(_makeTargetDir("opengl_win32"), HL_RUNTIME_FILES_WIN, true);
 						if( zipping )
 							zipFolder( '$baseRedistDir/${projectName}_opengl_win32.zip', baseRedistDir+"/opengl_win32/");
 					}
 
 					// SDL Mac
 					// if( hasParameter("-mac") ) {
-					// 	makeHl(baseRedistDir+"/opengl_mac/"+projectName, HL_RUNTIME_FILES_MAC, false);
+					// 	makeHl(_makeTargetDir("opengl_mac"), HL_RUNTIME_FILES_MAC, false);
 					// 	if( zipping )
 					// 		zipFolder( '$baseRedistDir/${projectName}_opengl_mac.zip', baseRedistDir+"/opengl_mac/");
 					// }
 
 					// SDL Linux
 					if( hasParameter("-linux") ) {
-						makeHl(baseRedistDir+"/opengl_linux/"+projectName, HL_RUNTIME_FILES_LINUX, false);
+						makeHl(_makeTargetDir("opengl_linux"), HL_RUNTIME_FILES_LINUX, false);
 						if( zipping )
 							zipFolder( '$baseRedistDir/${projectName}_opengl_linux.zip', baseRedistDir+"/opengl_linux/");
 					}
@@ -380,7 +388,7 @@ class Main {
 
 			// Neko
 			if( content.indexOf("-neko ")>=0 ) {
-				var nekoDir = baseRedistDir+"/neko";
+				var nekoDir = _makeTargetDir("neko",true);
 				initRedistDir(nekoDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
@@ -405,7 +413,7 @@ class Main {
 
 			// SWF
 			if( content.indexOf("-swf ")>=0 ) {
-				var swfDir = '$baseRedistDir/flash/$projectName';
+				var swfDir = _makeTargetDir("flash");
 				initRedistDir(swfDir, extraFiles);
 
 				Lib.println("Building "+hxml+"...");
@@ -676,6 +684,8 @@ class Main {
 						targetFp = f.target.clone();
 					targetFp.prependDirectory(targetPath);
 				}
+				else
+					targetFp.prependDirectory(targetPath);
 
 				if( verbose )
 					Lib.println(" -> FILE: "+projectDir+f.source.full+"  =>  "+targetFp.full);
@@ -1029,6 +1039,7 @@ class Main {
 		Lib.println("  -linux: package an Hashlink (HL) for Linux. This requires having an HXML using lib SDL");
 		Lib.println("  -hl32: when building Hashlink targets, this option will also package a 32bits version of the HL runtime in separate redist folders.");
 		Lib.println("  -zip: create a zip file for each build");
+		Lib.println("  -nodir: do not create a dir named after the project inside of each target folder");
 		Lib.println("  -ignore <namesOrExtensions>: List of files to be ignored when copying extra directories (typically temp files or similar things). Names should be separated by a comma \",\", no space. To ignore file extensions, use the \"*.ext\" format. See examples.");
 		Lib.println("  -pak: generate a PAK file from the existing Heaps resource folder");
 		Lib.println("  -sign: code sign the executables using a PFX certificate. A password will be requested to use the certificate. If the -pfx argument is not provided, the PFX path will be looked up in the environment var CSC_LINK. The password will also be looked up in the environment var CSC_KEY_PASSWORD.");
