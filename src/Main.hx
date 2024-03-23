@@ -279,8 +279,8 @@ class Main {
 
 		inline function _makeTargetDir(targetName:String, forceNoDir=false) {
 			return createSubDirs && !forceNoDir
-				? baseRedistDir+"/directx/"+projectName
-				: baseRedistDir+"/directx";
+				? baseRedistDir+"/"+targetName+"/"+projectName
+				: baseRedistDir+"/"+targetName;
 		}
 
 		// Parse HXML files given as parameters
