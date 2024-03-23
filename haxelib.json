@@ -4,9 +4,9 @@
   "license": "Apache",
   "tags": ["Heaps","Hashlink","package","redist"],
   "description": "A script to help package a HL/JS/Flash redistribuable from an existing project.",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "classPath": "src/",
-  "releasenote": "Added -nodir arg to avoid creating a sub directory in output folders",
+  "releasenote": "Added -nodir arg to avoid creating a sub directory in output folders (+ hot fix).",
   "contributors": ["sbenard"],
   "dependencies": {
     "deepnightLibs":""
