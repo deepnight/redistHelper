@@ -549,19 +549,25 @@ class Main {
 		var exes = [];
 		for( r in runTimeFiles.files ) {
 			if( r.lib==null || hxmlRequiresLib(hxmlPath, r.lib) ) {
-				var fileName = useHl32bits && r.f32!=null ? r.f32 : r.f;
-				var from = findFile(fileName, useHl32bits);
-				if( verbose )
-					Lib.println(" -> "+fileName + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
-				var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : fileName.indexOf("/")<0 ? fileName : fileName.substr(fileName.lastIndexOf("/")+1);
-				var to = targetDir+"/"+toFile;
-				if( r.executableFormat!=null && verbose )
-					Lib.println(" -> Renamed executable to "+toFile);
-				copy(from, to);
+				try {
+					var fileName = useHl32bits && r.f32!=null ? r.f32 : r.f;
+					var from = findFile(fileName, useHl32bits);
 
-				// List executables
-				if( r.executableFormat!=null )
-					exes.push( FilePath.fromFile(targetDir+"/"+toFile) );
+					if( verbose )
+						Lib.println(" -> "+fileName + ( r.lib==null?"" : " [required by -lib "+r.lib+"] (source: "+from+")") );
+					var toFile = r.executableFormat!=null ? StringTools.replace(r.executableFormat, "$", projectName) : fileName.indexOf("/")<0 ? fileName : fileName.substr(fileName.lastIndexOf("/")+1);
+					var to = targetDir+"/"+toFile;
+					if( r.executableFormat!=null && verbose )
+						Lib.println(" -> Renamed executable to "+toFile);
+					copy(from, to);
+	
+					// List executables
+					if( r.executableFormat!=null )
+						exes.push( FilePath.fromFile(targetDir+"/"+toFile) );
+				} catch (e) {
+					Lib.println(e.message);
+				}
+
 			}
 		}
 
